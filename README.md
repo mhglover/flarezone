@@ -16,11 +16,12 @@ Give examples
 
 ### Installing
 
-While FlareZone is deployed using Passenger, you can run it locally for development:
+While FlareZone is deployed using Passenger, you can run it locally for development. Pull down the source, create a virtual environment, active the virtualenv, and install the requirements.
 
 ```
-git clone <url>
-mkvirtualenv flarezone
+git clone https://github.com/mhglover/flarezone.git
+virtualenv env
+source env/bin/activate
 pip install -r requirements.txt
 ```
 
