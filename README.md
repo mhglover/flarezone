@@ -1,6 +1,6 @@
 # FlareZone
 
-A simple sci-fi zone generator for the Elysium Flare RPG by Brad Murray (https://www.patreon.com/halfjack).
+A simple sci-fi zone generator for the Elysium Flare RPG by Brad Murray (https://www.patreon.com/halfjack).  You can see this running at http://binary-systems.net.
 
 <!-- ## Getting Started
 
@@ -16,10 +16,11 @@ Give examples
 
 ### Installing
 
-While FlareZone is deployed using Passenger, you can run it locally for development. Pull down the source, create a virtual environment, active the virtualenv, and install the requirements.
+Pull down the source, create a virtual environment, active the virtualenv, and install the requirements.
 
 ```
 git clone https://github.com/mhglover/flarezone.git
+cd flarezone
 virtualenv env
 source env/bin/activate
 pip install -r requirements.txt
@@ -27,6 +28,7 @@ pip install -r requirements.txt
 
 ### Running
 
+#### Flask
 You can develop locally by running in Flask in debug mode. Debug mode will automatically reload the application upon changes to the source.
 ```
 export FLASK_APP=flarezone.py
@@ -36,7 +38,9 @@ python -m flask run
 
 Browse to http://localhost:5000
 
-Or if you've got Passenger installed, you can run it:
+#### Passenger
+
+We're using Passenger at Dreamhost for running at binary-systems.net. If you've got Passenger installed, you can run it with:
 ```
 passenger start
 ```
@@ -102,7 +106,7 @@ Each zone type (Hub, Rim, Gulf, and each Arm) should have a YAML file in the _da
 
 The _characteristics_ tables should be indexed with the upper roll for each chart item, so the topmost item should always be 100.
 
-## Planet Name Generation
+## Zone and Planet Names
 We're using code derived from Sayam Qazi's [planet-name-generator](https://github.com/sayamqazi/planet-name-generator) for building zone and planet names. You can modify the planet name corpus by editing _planet.txt_ and removing or adding planet names separated into syllables with dashes: _Jupiter_ becomes *ju-pi-ter*
 . Planetary suffixes are defined in the _generate.py_ script itself in the _genName()_ method.
 
