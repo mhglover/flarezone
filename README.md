@@ -88,27 +88,17 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 Each zone type (Hub, Rim, Gulf, and each Arm) should have a YAML file in the _data_ directory to define the characteristics to be generated for a given world in that area. 
 
-    name: hub
-    links: 4
-    characteristics:
-        culture:
-            41: "City world: a center of commerce and politics."
-            83: "Industry world: completely converted to industry."
-            88: "Luxury world: vacation spot for a hundred billion people or more."
-            89: "Imperial world: a planet owned by a single member of royalty; the population serves the royal family."
-            100: "Data world: dedicated to data processing and bureaucracy."
-        climate:
-            37: "Hot: the temperature is far too hot to support life."
-            74: "Cold: the temperature is far too cold to support life."
-            85: "Perfect but wet: the temperature is fine but it's very wet."
-            89: "Perfect but dry: the temperature is fine but it is very dry."
-            100: "Perfect: everything here is awesome."
-
-The _characteristics_ tables should be indexed with the upper roll for each chart item, so the topmost item should always be 100.
+For the Proximity characteristic, I'm using an array with an integer for each category.
 
 ## Zone and Planet Names
 We're using code derived from Sayam Qazi's [planet-name-generator](https://github.com/sayamqazi/planet-name-generator) for building zone and planet names. You can modify the planet name corpus by editing _planet.txt_ and removing or adding planet names separated into syllables with dashes: _Jupiter_ becomes *ju-pi-ter*
 . Planetary suffixes are defined in the _generate.py_ script itself in the _genName()_ method.
+
+## Fonts
+
+The following fonts are included for generating text upon zone images:
+* [GL-Nummernschild-Eng](https://fontlibrary.org/en/font/gl-nummernschild-eng) - License: [M+ Fonts Project License](https://en.wikipedia.org/wiki/M%2B_FONTS#Licensing)
+
 
 ## Authors
 
