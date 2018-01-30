@@ -1,3 +1,5 @@
 *.lock
 *.pyc
 env
+archive
+static
