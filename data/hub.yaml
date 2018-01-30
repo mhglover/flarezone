@@ -1,40 +1,36 @@
 name: hub
 links: 4
+color: "red"
+borders:
+  - Rim
 characteristics:
+  trouble:
+    0: "Massively overcrowded"
+    1: "Industrial wasteland"
+    2: "Bureaucratic hellhole"
+    3: "Worldwide computer systems crash"
+    4: "Awakening data hegemony"
   culture:
-    41: "City world: a center of commerce and politics."
-    83: "Industry world: completely converted to industry."
-    88: "Luxury world: vacation spot for a hundred billion people or more."
-    89: "Imperial world: a planet owned by a single member of royalty; the population serves the royal family."
-    100: "Data world: dedicated to data processing and bureaucracy."
-  climate:
-    37: "Hot: the temperature is far too hot to support life."
-    74: "Cold: the temperature is far too cold to support life."
-    85: "Perfect but wet: the temperature is fine but it's very wet."
-    89: "Perfect but dry: the temperature is fine but it is very dry."
-    100: "Perfect: everything here is awesome."
-  atmosphere:
-    59: "None: there is no naturally occurring air here of any kind. It must all be shipped in from somewhere else."
-    76: "Normal: plenty of air."
-    93: "Dense: way too much atmosphere. Crushing pressure."
-    100: "Exotic: bizarre stuff in the air. It could be a chemical or a biological element, or perhaps something even stranger."
-  ecology:
-    43: "Polluted: waste is everywhere and it stinks."
-    86: "None: the world manages its waste well but there is no indigenous life here at all."
-    99: "Parks: there are managed parks that are very beautiful but tiny."
-    100: "Balanced: a balance between arti cial and natural."
-  economy:
-    22: "Poor: most people here have it pretty rough."
-    98: "Sustainable: everyone here gets by."
-    100: "Rich: most people here are very wealthy."
-  stability:
-    65: "Stable: things are okay; problems but no crises."
-    84: "Dissent: there are organized groups of dissatisfied people willing to resort to violence."
-    91: "Guerilla war: there is a war but it's mostly Over There."
-    93: "Civil war: there is open warfare."
-    100: "War: things are cool here, internally, but there is a shooting war wiht a connected system that makes space travel a little hairy."
+    0: "Everyone is very busy"
+    1: "A noble class rules the rest"
+    2: "An egalitarian utopia"
+    3: "Very few people and all crazy rich"
+    4: "One free sophont and a world of slaves"
+  environment:
+    0: "All city"
+    1: "One huge city and a poisoned wilderness"
+    2: "Airless surface and an underground city world"
+    3: "Floating network of cities in a gas giant"
+    4: "A slower than light city ship going somewhere"
+  history:
+    0: "An ancient and ossified bureaucracy"
+    1: "Recovering from a recent revolution"
+    2: "Notorious for starting wars between rival worlds"
+    3: "Started a Horror incursion for profit and still living it down"
+    4: "Recently installed as-is by a hypercorporation"
   proximity:
-    70: "Very close."
-    90: "Close."
-    98: "Far: a link into a different zone."
-    100: "Distant: a link into one of the arms."
+    0: [1, 2, 0, 0] # One very close, two close
+    1: [2, 2, 0, 0] # Two very close, two close
+    2: [2, 2, 1, 0] # Two very close, two close, one far
+    3: [4, 0, 2, 0] # Four very close, two far
+    4: [0, 0, 0, 1] # One distant
