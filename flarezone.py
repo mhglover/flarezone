@@ -24,9 +24,11 @@ CANVAS = (1024, 768)  # The size of the final image in pixels.
 PLANETS = []  # a corpus of planet names to use for random generation
 ZONES = {}  # a data structure of zone names (keys) and YAML-derived definition objects 
 
-# I like this Blambot font, but don't have a license for it
-# fontfile = 'fonts/BlackHoleBB_ital.otf'
 fontfile = 'fonts/GL-Nummernschild-Eng.otf'
+fontfile = 'fonts/telegrama_render.otf'
+zone_label_size = 20
+planet_label_size = 18
+descrip_label_size = 14
 
 # Read in the list of planets for name generation.
 with open(DATAPATH + "planets.txt", "r") as pfile:
@@ -301,10 +303,9 @@ class Zone(object):
         d.ellipse(box, fill=color, outline=color)
 
     def drawName(self, image, world):
-        fontsize = 18
-        fnt = ImageFont.truetype(fontfile, fontsize)
+        fnt = ImageFont.truetype(fontfile, planet_label_size)
         d = ImageDraw.Draw(image)
-        d.text((world.coordinates[0], world.coordinates[1] + world.radius + (fontsize * .5)),
+        d.text((world.coordinates[0], world.coordinates[1] + world.radius + (planet_label_size * .5)),
                world.name,
                font=fnt,
                fill=(0, 0, 0, 128))
@@ -337,15 +338,14 @@ class Zone(object):
         for w in [self.capital] + self.veryclose + self.close:
             self.drawName(world=w, image=zoneimage)
 
-        fontsize = 14
-        fnt = ImageFont.truetype(fontfile, fontsize)
+        fnt = ImageFont.truetype(fontfile, descrip_label_size)
         d.text((0,0),
                 text,
                 font=fnt,
                 fill=(0, 0, 0, 255))
 
         out = zoneimage.resize((1024, 760), resample=1)
-        out.save("zones/%s.jpg" % self.zonename)
+        out.save("static/%s.jpg" % self.zonename)
 
 
 @app.route('/')

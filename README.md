@@ -98,6 +98,7 @@ We're using code derived from Sayam Qazi's [planet-name-generator](https://githu
 
 The following fonts are included for generating text upon zone images:
 * [GL-Nummernschild-Eng](https://fontlibrary.org/en/font/gl-nummernschild-eng) - License: [M+ Fonts Project License](https://en.wikipedia.org/wiki/M%2B_FONTS#Licensing)
+* [Telegrama](https://www.fontsquirrel.com/fonts/Telegrama) - License: [YOFonts License Agreement](https://www.fontsquirrel.com/license/Telegrama)
 
 
 ## Authors
