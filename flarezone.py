@@ -5,42 +5,45 @@ from __future__ import print_function
 from random import randint
 import os
 import time
-import sys
 from math import sin, cos, radians, pi
 # from pprint import pprint
 from flask import Flask
 from PIL import Image, ImageDraw, ImageFont
-# import itertools
-# import bisect
 from numpy import random
 import yaml
 import randomcolor
 
 app = Flask(__name__)
 
-DATAPATH = "data/"  # directory where the YAML files defining the world types live
-CANVAS = (1024, 768)  # The size of the final image in pixels.
-# We'll work at double the size, then resize to smooth edges.
-PLANETS = []  # a corpus of planet names to use for random generation
-ZONES = {}  # a data structure of zone names (keys) and YAML-derived definition objects 
-
-fontfile = 'fonts/GL-Nummernschild-Eng.otf'
-fontfile = 'fonts/telegrama_render.otf'
-zone_label_size = 20
-planet_label_size = 18
-descrip_label_size = 14
-
-# Read in the list of planets for name generation.
-with open(DATAPATH + "planets.txt", "r") as pfile:
-    PLANETS = pfile.read().split("\n")
-
-with open(DATAPATH + "planet-suffixes.txt", "r") as sfile:
-    SUFFIXES = sfile.read().split("\n")
-
-rand_color = randomcolor.RandomColor()
 def getcolor(hue):
+    """ Generate a random color from a base hue and return an rgb value. """
+    rand_color = randomcolor.RandomColor()
     c = rand_color.generate(hue=hue, format_='rgb')[0]
     return c
+
+
+def drawName(image, world):
+    """ Draw the name of this world on the zone image. """
+    fnt = ImageFont.truetype(fontfile, planet_label_size)
+    d = ImageDraw.Draw(image)
+    d.text((world.coordinates[0],
+            world.coordinates[1] + world.radius + (planet_label_size * .5)
+           ),
+           world.name,
+           font=fnt,
+           fill=(0, 0, 0, 128))
+
+
+def drawWorld(world, image):
+    """ Draw and label a world on the zone image. """
+    x, y = world.coordinates
+    r = world.radius
+    ul = (x-r, y-r)
+    lr = (x+r, y+r)
+    box = (ul, lr)
+    d = ImageDraw.Draw(image)
+    color = world.color
+    d.ellipse(box, fill=color, outline=color)
 
 
 class ObjectView(object):
@@ -48,27 +51,16 @@ class ObjectView(object):
     def __init__(self, d):
         self.__dict__ = d
 
-# Read in the zone definition YAML files
-# and create a data structure for zone info:
-filenames = [fn for fn in os.listdir(DATAPATH)
-             if any(fn.endswith(ext) for ext in "yaml")]
-for filename in filenames:
-    with open(DATAPATH + filename, 'r') as datafile:
-        zone = yaml.load(datafile)
-        name = zone['name']
-        zoneobject = ObjectView(zone)
-        ZONES[name] = zoneobject
-
 
 class NameGenerator(object):
     """ Build sci-fi planet names. """
 
-    def __init__(self):
+    def __init__(self, planetnames, suffixnames):
         total_syllables = 0
 
         self.syllables = []
 
-        for p in PLANETS:
+        for p in planetnames:
             lex = p.split("-")
             total_syllables += len(lex)
             for l in lex:
@@ -81,7 +73,7 @@ class NameGenerator(object):
         self.size = len(self.syllables) + 1
         self.freq = [[0] * self.size for i in range(self.size)]
 
-        for p in PLANETS:
+        for p in planets:
             lex = p.split("-")
             i = 0
             while i < len(lex) - 1:
@@ -89,10 +81,10 @@ class NameGenerator(object):
                 i += 1
             self.freq[self.syllables.index(lex[len(lex) - 1])][self.size-1] += 1
 
-        blanks = [""] * (len(SUFFIXES) + 2)
-        self.suffixes = SUFFIXES + blanks
+        blanks = [""] * (len(suffixnames) + 2)
+        self.suffixes = suffixnames + blanks
 
-    def genName(self):
+    def genName(self, suffix=True):
         """ Produce a sci-fi name. """
         planet_name = ""
         length = randint(2, 3)
@@ -105,7 +97,7 @@ class NameGenerator(object):
             length -= 1
         suffix_index = randint(0, len(self.suffixes) - 1)
         planet_name = planet_name.title()
-        if not self.suffixes[suffix_index]:
+        if self.suffixes[suffix_index] and suffix:
             planet_name += " " + self.suffixes[suffix_index]
         return planet_name.rstrip()
 
@@ -119,34 +111,33 @@ def point_pos(x0, y0, d):
 class World(object):
     """ Generate a World object. """
 
-    def __init__(self, worldtype=None, seed=None):
+    def __init__(self, namer, worldtype=None):
         """ Create the world. """
 
-        # use a seed if it's supplied so we can recreate worlds.
-        random.seed(seed)
-
-        # if no world type is given, pick one at random from ZONES
+        # if no world type is given, pick one at random from zones
         if worldtype is None:
-            z = (randint(1, len(ZONES)) - 1)
-            self.type = ZONES.keys()[z]
+            z = (randint(1, len(zones)) - 1)
+            self.type = zones.keys()[z]
         else:
-            self.type = ZONES[worldtype].name
+            self.type = zones[worldtype].name
 
-        self.chartables = ZONES[self.type].characteristics
-        self.namer = NameGenerator()
-        self.name = self.namer.genName()
+        self.chartables = zones[self.type].characteristics
+        self.name = namer.genName()
 
         # the dimensions of the final canvas
-        xmax, ymax = CANVAS
+        xmax, ymax = canvas
 
         # the margins - we don't want a world too close to the edge
-        xmargin = int(xmax * .1)
-        ymargin = int(ymax * .1)
+        # xmargin = int(xmax * .1)
+        # ymargin = int(ymax * .1)
 
-        # the radius and coordinates of the sphere for this world
+        # the radius for the world
         r = randint(int(xmax * .03), int(xmax * .08))
-        # x = randint(xmargin + r, xmax - xmargin - r)
-        # y = randint(ymargin + r, ymax - ymargin - r)
+
+        # coordinates of the sphere for this world
+        # we place every world at the center of the map
+        # and for linked worlds, we change that to be
+        # relative to the capital world
         x = xmax / 2
         y = ymax / 2
 
@@ -170,27 +161,14 @@ class World(object):
             [2, 1, 1, 1, 0],
             [1, 1, 1, 1, 1]
         ]
-        distribution = distributions[(randint(1,5) - 1)]
+        distribution = distributions[(randint(1, 5) - 1)]
         random.shuffle(distribution)
         self.characteristics = dict(zip(characteristic_list, distribution))
-
-        # for a in xrange(total):
-        #     unmaxed = [x for x in self.characteristics.keys() if self.characteristics[x] < 4]
-        #     chosen = random.choice(unmaxed)
-        #     self.characteristics[chosen] = self.characteristics[chosen] + 1
 
         for each in self.characteristics:
             cost = self.characteristics[each]
             result = chartables[each][cost]
             self.characteristics[each] = result
-            
-        # for characteristic in characteristic_list:
-        #     table = chartables[characteristic]
-        #     roll = randint(1, 100)
-        #     rolls = sorted(table.keys())
-        #     nearest_index = bisect.bisect_left(rolls, roll)
-        #     value = table[rolls[nearest_index]]
-        #     self.characteristics[characteristic] = value
 
     def getWorld(self):
         """ Print all the details about this world. """
@@ -214,25 +192,23 @@ class Zone(object):
     """ Represents a zone generated for Elysium Flare. """
 
     def __init__(self,
+                 namer,
                  zonetype=None):
 
         # pick a zonetype randomly if we weren't given one
         if zonetype is None:
-            z = (randint(1, len(ZONES)) - 1)
-            self.type = ZONES.keys()[z]
+            z = (randint(1, len(zones)) - 1)
+            self.type = zones.keys()[z]
         else:
-            self.type = ZONES[zonetype].name
+            self.type = zones[zonetype].name
 
-        # TODO - we're creating a name generator for the zone
-        # and another for each world - overkill
-        self.namer = NameGenerator()
-        self.zonename = self.namer.genName()
+        self.zonename = namer.genName(suffix=False)
 
         # note the other zones we border
-        self.borders = ZONES[self.type].borders
+        self.borders = zones[self.type].borders
 
         # generate our zone capital
-        self.capital = World(worldtype=zonetype)
+        self.capital = World(namer, worldtype=zonetype)
 
         self.capital.color = getcolor('blue')
 
@@ -240,8 +216,8 @@ class Zone(object):
         p = self.capital.characteristics['proximity']
 
         self.veryclose = []
-        for a in xrange(p[0]):
-            w = World(worldtype=zonetype)
+        for _ in xrange(p[0]):
+            w = World(namer, worldtype=zonetype)
             w.coordinates = point_pos(w.coordinates[0],
                                       w.coordinates[1],
                                       self.capital.radius + w.radius)
@@ -249,8 +225,8 @@ class Zone(object):
             self.veryclose.append(w)
 
         self.close = []
-        for a in xrange(p[1]):
-            w = World(worldtype=zonetype)
+        for _ in xrange(p[1]):
+            w = World(namer, worldtype=zonetype)
             w.coordinates = point_pos(w.coordinates[0],
                                       w.coordinates[1],
                                       self.capital.radius + w.radius + randint(150, 250))
@@ -258,15 +234,15 @@ class Zone(object):
             self.close.append(w)
 
         self.distant = []
-        for a in xrange(p[2]):
-            self.distant.append((self.type, 
-                                 self.namer.genName(),
+        for _ in xrange(p[2]):
+            self.distant.append((self.type,
+                                 namer.genName(suffix=False),
                                  randint(1, 361) - 1))
 
         self.far = []
-        for a in xrange(p[3]):
+        for _ in xrange(p[3]):
             self.far.append((random.choice(self.borders),
-                             self.namer.genName(),
+                             namer.genName(suffix=False),
                              randint(1, 361) - 1))
 
     def getNeighbors(self):
@@ -291,85 +267,112 @@ class Zone(object):
 
         return output
 
-    def drawWorld(self, world, image):
-        """ Draw and label a world on the zone image. """
-        x, y = world.coordinates
-        r = world.radius
-        ul = (x-r, y-r)
-        lr = (x+r, y+r)
-        box = (ul, lr)
-        d = ImageDraw.Draw(image)
-        color = world.color
-        d.ellipse(box, fill=color, outline=color)
+def drawZone(thiszone, text):
+    """ Render an image with all the worlds in the thiszone. """
+    background = (240, 240, 240)
+    zoneimage = Image.new('RGB', canvas, background)
+    d = ImageDraw.Draw(zoneimage)
 
-    def drawName(self, image, world):
-        fnt = ImageFont.truetype(fontfile, planet_label_size)
-        d = ImageDraw.Draw(image)
-        d.text((world.coordinates[0], world.coordinates[1] + world.radius + (planet_label_size * .5)),
-               world.name,
-               font=fnt,
-               fill=(0, 0, 0, 128))
+    # draw the close links
+    for w in thiszone.veryclose + thiszone.close:
+        d.line((thiszone.capital.coordinates, w.coordinates),
+               fill=(0, 0, 0), width=2)
 
-    def drawZone(self, text):
-        """ Render an image with all the worlds in the zone. """
-        background = (240, 240, 240)
-        zoneimage = Image.new('RGB', CANVAS, background)
-        d = ImageDraw.Draw(zoneimage)
+    # draw the far and distant links
+    for w in thiszone.distant + thiszone.far:
+        # angle = randint(1, 361) - 1
+        # point_pos picks a random angle
+        x, y = thiszone.capital.coordinates
+        destination = point_pos(x, y, canvas[0])
+        print("Destination: %s,%s" % destination)
+        d.line((thiszone.capital.coordinates, destination),
+               fill=(0, 0, 0), width=2)
 
-        # draw the close links
-        for w in self.veryclose + self.close:
-            d.line((self.capital.coordinates, w.coordinates),
-                    fill=(0, 0, 0), width=2)
+    # draw the worlds
+    for w in [thiszone.capital] + thiszone.veryclose + thiszone.close:
+        drawWorld(world=w, image=zoneimage)
 
-        # draw the far and distant links
-        for w in self.distant + self.far:
-            angle = randint(1, 361) - 1
-            x, y = self.capital.coordinates
-            destination = point_pos(x, y, CANVAS[0])
-            print("Destination: %s,%s" % destination)
-            d.line((self.capital.coordinates, destination),
-                    fill=(0, 0, 0), width=2)
+    # draw the labels
+    for w in [thiszone.capital] + thiszone.veryclose + thiszone.close:
+        drawName(world=w, image=zoneimage)
 
-        # draw the worlds
-        for w in [self.capital] + self.veryclose + self.close:
-            self.drawWorld(world=w, image=zoneimage)
+    # draw the world descriptions
+    fnt = ImageFont.truetype(fontfile, descrip_label_size)
+    # text = textwrap.wrap(text, 40)
+    # text = '\n'.join(text)
+    d.text((0, 0),
+           text,
+           font=fnt,
+           fill=(0, 0, 0, 255))
 
-        # draw the labels
-        for w in [self.capital] + self.veryclose + self.close:
-            self.drawName(world=w, image=zoneimage)
+    # draw the zone label
+    label = "%s:%s" % (thiszone.type.title(), thiszone.zonename)
+    fnt = ImageFont.truetype(fontfile, zone_label_size)
+    d.text((0, canvas[1] - zone_label_size),
+           label,
+           font=fnt,
+           fill=(0, 0, 0, 255))
 
-        fnt = ImageFont.truetype(fontfile, descrip_label_size)
-        d.text((0,0),
-                text,
-                font=fnt,
-                fill=(0, 0, 0, 255))
-
-        out = zoneimage.resize((1024, 760), resample=1)
-        out.save("static/%s.jpg" % self.zonename)
+    out = zoneimage.resize((1024, 768), resample=1)
+    out.save("static/%s.jpg" % thiszone.zonename)
 
 
 @app.route('/')
 def serveZone():
     """ Default endpoint - generate text defining a zone and the worlds in it."""
-    zone = Zone()
-    capital = zone.capital
+    mynamer = NameGenerator(planets, suffixes)
+    myzone = Zone(mynamer)
+    capital = myzone.capital
     text = "%s\n" % capital.getWorld()
-    text += zone.getNeighbors()
-    print(text)
-    zone.drawZone(text)
+    text += myzone.getNeighbors()
+    drawZone(myzone, text)
 
     output = "<html><body>\n"
-    output += "<img src='static/%s.jpg'>\n" % zone.zonename
+    output += "<img src='static/%s.jpg'\n" % myzone.zonename
+    output += "alt=\"%s\">\n" % text
     output += "</body></html>\n"
-    return output
 
     # remove image files older than five minutes
     path = "static"
     now = time.time()
     for f in os.listdir(path):
-        if os.stat(f).st_mtime < now - 300:
-            if os.path.isfile(f):
-                os.remove(os.path.join(path, f))
+        ff = os.path.join(path, f)
+        if os.stat(ff).st_mtime < now - 300:
+            if os.path.isfile(ff):
+                os.remove(ff)
+    return output
 
 if __name__ == '__main__':
+    datapath = "data/"  # directory where the YAML files defining the world types live
+    planets = []  # a corpus of planet names to use for random generation
+    suffixes = [] # a list of planetary suffixes
+    zones = {}  # a data structure of zone names (keys) and YAML-derived definition objects
+
+    # Read in the zone definition YAML files
+    # and create a data structure for zone info:
+    filenames = [fn for fn in os.listdir(datapath)
+                 if any(fn.endswith(ext) for ext in "yaml")]
+    for filename in filenames:
+        with open(datapath + filename, 'r') as datafile:
+            zone = yaml.load(datafile)
+            name = zone['name']
+            zoneobject = ObjectView(zone)
+            zones[name] = zoneobject
+
+    # Read in the list of planets for name generation.
+    with open(datapath + "planets.txt", "r") as pfile:
+        planets = pfile.read().split("\n")
+
+    with open(datapath + "planet-suffixes.txt", "r") as sfile:
+        suffixes = sfile.read().split("\n")
+
+    canvas = (2048, 1536)  # The size of the final image in pixels.
+    # We'll work at double the size, then resize to smooth edges.
+
+    fontfile = 'fonts/GL-Nummernschild-Eng.otf'
+    fontfile = 'fonts/telegrama_render.otf'
+    zone_label_size = 64
+    planet_label_size = 36
+    descrip_label_size = 28
+
     app.run(debug=True, host='::')

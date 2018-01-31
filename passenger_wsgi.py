@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """ Set up Passenger for a virtualenv and the flarezone app. """
-# pylint: disable=W0611
+# pylint: disable=W0611, C0413
 import sys
 import os
 
