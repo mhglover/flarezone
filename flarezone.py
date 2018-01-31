@@ -338,41 +338,41 @@ def serveZone():
     for f in os.listdir(path):
         ff = os.path.join(path, f)
         if os.stat(ff).st_mtime < now - 300:
-            if os.path.isfile(ff):
+            if os.path.isfile(ff) and "jpg" in f:
                 os.remove(ff)
     return output
 
+datapath = "data/"  # directory where the YAML files defining the world types live
+planets = []  # a corpus of planet names to use for random generation
+suffixes = [] # a list of planetary suffixes
+zones = {}  # a data structure of zone names (keys) and YAML-derived definition objects
+
+# Read in the zone definition YAML files
+# and create a data structure for zone info:
+filenames = [fn for fn in os.listdir(datapath)
+             if any(fn.endswith(ext) for ext in "yaml")]
+for filename in filenames:
+    with open(datapath + filename, 'r') as datafile:
+        zone = yaml.load(datafile)
+        name = zone['name']
+        zoneobject = ObjectView(zone)
+        zones[name] = zoneobject
+
+# Read in the list of planets for name generation.
+with open(datapath + "planets.txt", "r") as pfile:
+    planets = pfile.read().split("\n")
+
+with open(datapath + "planet-suffixes.txt", "r") as sfile:
+    suffixes = sfile.read().split("\n")
+
+canvas = (2048, 1536)  # The size of the final image in pixels.
+# We'll work at double the size, then resize to smooth edges.
+
+fontfile = 'fonts/GL-Nummernschild-Eng.otf'
+fontfile = 'fonts/telegrama_render.otf'
+zone_label_size = 64
+planet_label_size = 36
+descrip_label_size = 28
+
 if __name__ == '__main__':
-    datapath = "data/"  # directory where the YAML files defining the world types live
-    planets = []  # a corpus of planet names to use for random generation
-    suffixes = [] # a list of planetary suffixes
-    zones = {}  # a data structure of zone names (keys) and YAML-derived definition objects
-
-    # Read in the zone definition YAML files
-    # and create a data structure for zone info:
-    filenames = [fn for fn in os.listdir(datapath)
-                 if any(fn.endswith(ext) for ext in "yaml")]
-    for filename in filenames:
-        with open(datapath + filename, 'r') as datafile:
-            zone = yaml.load(datafile)
-            name = zone['name']
-            zoneobject = ObjectView(zone)
-            zones[name] = zoneobject
-
-    # Read in the list of planets for name generation.
-    with open(datapath + "planets.txt", "r") as pfile:
-        planets = pfile.read().split("\n")
-
-    with open(datapath + "planet-suffixes.txt", "r") as sfile:
-        suffixes = sfile.read().split("\n")
-
-    canvas = (2048, 1536)  # The size of the final image in pixels.
-    # We'll work at double the size, then resize to smooth edges.
-
-    fontfile = 'fonts/GL-Nummernschild-Eng.otf'
-    fontfile = 'fonts/telegrama_render.otf'
-    zone_label_size = 64
-    planet_label_size = 36
-    descrip_label_size = 28
-
     app.run(debug=True, host='::')
