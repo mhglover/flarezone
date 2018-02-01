@@ -7,7 +7,7 @@ import os
 import time
 from math import sin, cos, radians, degrees, sqrt, asin
 # from pprint import pprint
-from flask import Flask
+from flask import Flask, render_template
 from PIL import Image, ImageDraw, ImageFont
 from numpy import random
 import yaml
@@ -19,6 +19,29 @@ class ObjectView(object):
     """ Create an object out of a data structure. """
     def __init__(self, d):
         self.__dict__ = d
+
+datapath = "data/"  # directory where the YAML files defining the world types live
+planets = []  # a corpus of planet names to use for random generation
+suffixes = [] # a list of planetary suffixes
+zones = {}  # a data structure of zone names (keys) and YAML-derived definition objects
+
+# Read in the zone definition YAML files
+# and create a data structure for zone info:
+filenames = [fn for fn in os.listdir(datapath)
+             if any(fn.endswith(ext) for ext in "yaml")]
+for filename in filenames:
+    with open(datapath + filename, 'r') as datafile:
+        zone = yaml.load(datafile)
+        name = zone['name']
+        zoneobject = ObjectView(zone)
+        zones[name] = zoneobject
+
+# Read in the list of planets for name generation.
+with open(datapath + "planets.txt", "r") as pfile:
+    planets = pfile.read().split("\n")
+
+with open(datapath + "planet-suffixes.txt", "r") as sfile:
+    suffixes = sfile.read().split("\n")
 
 class NameGenerator(object):
     """ Build sci-fi planet names. """
@@ -375,22 +398,7 @@ def drawZone(thiszone, text):
     out = zoneimage.resize((1024, 768), resample=1)
     out.save("static/%s.jpg" % thiszone.zonename)
 
-
-@app.route('/')
-def serveZone():
-    """ Default endpoint - generate text defining a zone and the worlds in it."""
-    mynamer = NameGenerator(planets, suffixes)
-    myzone = Zone(mynamer)
-    capital = myzone.capital
-    text = "%s\n" % capital.getWorld()
-    text += myzone.getNeighbors()
-    drawZone(myzone, text)
-
-    output = "<html><body>\n"
-    output += "<img src='static/%s.jpg'\n" % myzone.zonename
-    output += "alt=\"%s\">\n" % text
-    output += "</body></html>\n"
-
+def cleanup():
     # remove image files older than five minutes
     path = "static"
     now = time.time()
@@ -399,39 +407,40 @@ def serveZone():
         if os.stat(ff).st_mtime < now - 300:
             if os.path.isfile(ff) and "jpg" in f:
                 os.remove(ff)
-    return output
 
-datapath = "data/"  # directory where the YAML files defining the world types live
-planets = []  # a corpus of planet names to use for random generation
-suffixes = [] # a list of planetary suffixes
-zones = {}  # a data structure of zone names (keys) and YAML-derived definition objects
+def genZone(region=None):
+    mynamer = NameGenerator(planets, suffixes)
+    myzone = Zone(mynamer, zonetype=region)
+    capital = myzone.capital
+    text = "%s\n" % capital.getWorld()
+    text += myzone.getNeighbors()
+    drawZone(myzone, text)
+    image = myzone.zonename + ".jpg"
+    print(image)
+    return image, text
 
-# Read in the zone definition YAML files
-# and create a data structure for zone info:
-filenames = [fn for fn in os.listdir(datapath)
-             if any(fn.endswith(ext) for ext in "yaml")]
-for filename in filenames:
-    with open(datapath + filename, 'r') as datafile:
-        zone = yaml.load(datafile)
-        name = zone['name']
-        zoneobject = ObjectView(zone)
-        zones[name] = zoneobject
+@app.route('/region/<region>')
+def region(region):
+    """ Generate a specific region. """
+    cleanup()
+    image, alt = genZone(region=region)
+    return render_template('index.html', image=image, alt=alt)
 
-# Read in the list of planets for name generation.
-with open(datapath + "planets.txt", "r") as pfile:
-    planets = pfile.read().split("\n")
-
-with open(datapath + "planet-suffixes.txt", "r") as sfile:
-    suffixes = sfile.read().split("\n")
-
-canvas = (2048, 1536)  # The size of the final image in pixels.
-# We'll work at double the size, then resize to smooth edges.
-
-fontfile = 'fonts/GL-Nummernschild-Eng.otf'
-fontfile = 'fonts/telegrama_render.otf'
-zone_label_size = 64
-planet_label_size = 36
-descrip_label_size = 28
+@app.route('/')
+def default():
+    """ Default endpoint - generate text defining a zone and the worlds in it."""
+    cleanup()
+    image, alt = genZone()
+    return render_template('index.html', image=image, alt=alt)
 
 if __name__ == '__main__':
+    canvas = (2048, 1536)  # The size of the final image in pixels.
+    # We'll work at double the size, then resize to smooth edges.
+
+    fontfile = 'fonts/GL-Nummernschild-Eng.otf'
+    fontfile = 'fonts/telegrama_render.otf'
+    zone_label_size = 64
+    planet_label_size = 36
+    descrip_label_size = 28
+
     app.run(debug=True, host='::')
