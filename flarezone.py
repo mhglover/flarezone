@@ -5,7 +5,7 @@ from __future__ import print_function
 from random import randint
 import os
 import time
-from math import sin, cos, radians, pi
+from math import sin, cos, tan, radians, pi, degrees, sqrt, asin, atan
 # from pprint import pprint
 from flask import Flask
 from PIL import Image, ImageDraw, ImageFont
@@ -15,42 +15,10 @@ import randomcolor
 
 app = Flask(__name__)
 
-def getcolor(hue):
-    """ Generate a random color from a base hue and return an rgb value. """
-    rand_color = randomcolor.RandomColor()
-    c = rand_color.generate(hue=hue, format_='rgb')[0]
-    return c
-
-
-def drawName(image, world):
-    """ Draw the name of this world on the zone image. """
-    fnt = ImageFont.truetype(fontfile, planet_label_size)
-    d = ImageDraw.Draw(image)
-    d.text((world.coordinates[0],
-            world.coordinates[1] + world.radius + (planet_label_size * .5)
-           ),
-           world.name,
-           font=fnt,
-           fill=(0, 0, 0, 128))
-
-
-def drawWorld(world, image):
-    """ Draw and label a world on the zone image. """
-    x, y = world.coordinates
-    r = world.radius
-    ul = (x-r, y-r)
-    lr = (x+r, y+r)
-    box = (ul, lr)
-    d = ImageDraw.Draw(image)
-    color = world.color
-    d.ellipse(box, fill=color, outline=color)
-
-
 class ObjectView(object):
     """ Create an object out of a data structure. """
     def __init__(self, d):
         self.__dict__ = d
-
 
 class NameGenerator(object):
     """ Build sci-fi planet names. """
@@ -87,26 +55,19 @@ class NameGenerator(object):
     def genName(self, suffix=True):
         """ Produce a sci-fi name. """
         planet_name = ""
-        length = randint(2, 3)
-        initial = randint(0, self.size - 2)
+        length = random.randint(2, 3)
+        initial = random.randint(0, self.size - 2)
         while length > 0:
             while 1 not in self.freq[initial]:
-                initial = randint(0, self.size - 2)
+                initial = random.randint(0, self.size - 2)
             planet_name += self.syllables[initial]
             initial = self.freq[initial].index(1)
             length -= 1
-        suffix_index = randint(0, len(self.suffixes) - 1)
+        suffix_index = random.randint(0, len(self.suffixes) - 1)
         planet_name = planet_name.title()
         if self.suffixes[suffix_index] and suffix:
             planet_name += " " + self.suffixes[suffix_index]
         return planet_name.rstrip()
-
-
-def point_pos(x0, y0, d):
-    """ find a point in a random direction at a given distance """
-    theta = randint(1, 361) -1
-    theta_rad = pi/2 - radians(theta)
-    return x0 + d*cos(theta_rad), y0 + d*sin(theta_rad)
 
 class World(object):
     """ Generate a World object. """
@@ -116,7 +77,7 @@ class World(object):
 
         # if no world type is given, pick one at random from zones
         if worldtype is None:
-            z = (randint(1, len(zones)) - 1)
+            z = (random.randint(1, len(zones)) - 1)
             self.type = zones.keys()[z]
         else:
             self.type = zones[worldtype].name
@@ -132,7 +93,7 @@ class World(object):
         # ymargin = int(ymax * .1)
 
         # the radius for the world
-        r = randint(int(xmax * .03), int(xmax * .08))
+        r = random.randint(int(xmax * .03), int(xmax * .08))
 
         # coordinates of the sphere for this world
         # we place every world at the center of the map
@@ -161,7 +122,7 @@ class World(object):
             [2, 1, 1, 1, 0],
             [1, 1, 1, 1, 1]
         ]
-        distribution = distributions[(randint(1, 5) - 1)]
+        distribution = distributions[(random.randint(1, 5) - 1)]
         random.shuffle(distribution)
         self.characteristics = dict(zip(characteristic_list, distribution))
 
@@ -187,7 +148,6 @@ class World(object):
                 output += "%s - %s\n" % (key.title(), self.characteristics[key])
         return output
 
-
 class Zone(object):
     """ Represents a zone generated for Elysium Flare. """
 
@@ -197,7 +157,7 @@ class Zone(object):
 
         # pick a zonetype randomly if we weren't given one
         if zonetype is None:
-            z = (randint(1, len(zones)) - 1)
+            z = (random.randint(0, len(zones)) - 1)
             self.type = zones.keys()[z]
         else:
             self.type = zones[zonetype].name
@@ -207,55 +167,88 @@ class Zone(object):
         # note the other zones we border
         self.borders = zones[self.type].borders
 
-        # generate our zone capital
+        # generate our zone capital - this world is at
+        # the center of the map
         self.capital = World(namer, worldtype=zonetype)
-
-        self.capital.color = getcolor('blue')
+        capx, capy = self.capital.coordinates
+        caprad = self.capital.radius
+        self.capital.color = getcolor(zones[self.type].color)
 
         # generate the other worlds in the zone
         p = self.capital.characteristics['proximity']
 
         self.veryclose = []
+        # very close worlds are tangential to the capital world
+        # used to ensure our routes don't overlap worlds
+        heading = 0 
+        # used to ensure our close worlds don't overlap the inner sphere worlds,
+        # aka the very close worlds and the capital world
+        inner_sphere = 0
+        prior_world = None
         for _ in xrange(p[0]):
             w = World(namer, worldtype=zonetype)
-            w.coordinates = point_pos(w.coordinates[0],
-                                      w.coordinates[1],
-                                      self.capital.radius + w.radius)
+            wrad = w.radius
+
+            # the inner sphere is the outer edge of the largest very close world
+            if wrad*2 > inner_sphere:
+                inner_sphere = wrad*2
+
+            dist = caprad + wrad
+            # Rather than doing proper math to ensure worlds don't overlap, I
+            # just picked a magic number through trial and error.  Fifty looks
+            # about right.
+            magic = 50 
+            heading = random.randint(heading + magic * .8,
+                                     heading + magic * 1.2)
+            w.coordinates = theta_point((capx, capy), dist, heading)
+            wx, wy = w.coordinates
+            tangent = findtan((capx, capy), (wx, wy, wrad))
+            heading = heading + tangent
             w.color = getcolor("green")
+            prior_world = w
             self.veryclose.append(w)
 
         self.close = []
         for _ in xrange(p[1]):
             w = World(namer, worldtype=zonetype)
-            w.coordinates = point_pos(w.coordinates[0],
-                                      w.coordinates[1],
-                                      self.capital.radius + w.radius + randint(150, 250))
+            wrad = w.radius
+            # ensure these worlds are outside the inner sphere
+            dist = random.randint(inner_sphere * 1.5, canvas[1] * .4)
+            magic = 50 
+            heading = random.randint(heading + magic * .8,
+                                     heading + magic * 1.2)
+            w.coordinates = theta_point((capx, capy), dist+wrad, heading)
+            wx, wy = w.coordinates
+            tangent = findtan((capx, capy), (wx, wy, wrad))
+            heading = heading + tangent
             w.color = getcolor("red")
             self.close.append(w)
 
         self.distant = []
         for _ in xrange(p[2]):
+            name = namer.genName(suffix=False)
+            heading = random.randint(heading + 5, heading+20)
             self.distant.append((self.type,
-                                 namer.genName(suffix=False),
-                                 randint(1, 361) - 1))
+                                 name,
+                                 heading))
 
         self.far = []
         for _ in xrange(p[3]):
+            name = namer.genName(suffix=False)
+            heading = random.randint(heading + 5, heading+20)
             self.far.append((random.choice(self.borders),
-                             namer.genName(suffix=False),
-                             randint(1, 361) - 1))
+                             name,
+                             heading))
 
     def getNeighbors(self):
         """ Return text describing the neighboring worlds and zones. """
         output = ""
 
         for z in self.veryclose:
-            # output += "Very Close World -----------\n"
             output += z.getWorld()
             output += "\n"
 
         for z in self.close:
-            # output += "Close World ----------------\n"
             output += z.getWorld()
             output += "\n"
 
@@ -266,6 +259,65 @@ class Zone(object):
             output += "Far - %s:%s\n\n" % (z[0].title(), z[1])
 
         return output
+
+def theta_point(coordinates, distance, theta):
+    """ generate a new point at a given distance and angle
+
+    :param coordinates: 2-tuple, origin point in (x, y) format
+    :param distance: int, distance in pixels to new point
+    :param theta: int 0-360, angle to new point
+
+    :returns 2-tuple of new point coordinates
+    """
+    x, y = coordinates
+    theta_rad = radians(theta)
+    return cos(theta_rad) * distance + x, sin(theta_rad) * distance + y
+
+def findtan(point, circ):
+    """ find the angle of the tangent of a line from a point to a circle
+
+    :param point: 2-tuple, origin point in (x, y) format
+    :param circ: 3-tuple, (x, y, radius)
+
+    : returns angle in degrees between the line from point to center and the
+    tangent line
+    """
+    # find the distance between the points
+    x1, y1 = point
+    print("point: %s, %s" % point)
+    x2, y2, radius = circ
+    print("circ: %s, %s, %s" % circ)
+    hypotenuse = sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    print("hypotenuse: %s" % hypotenuse)
+    return degrees(asin(radius/hypotenuse))
+
+def getcolor(hue):
+    """ Generate a random color from a base hue and return an rgb value. """
+    rand_color = randomcolor.RandomColor()
+    c = rand_color.generate(hue=hue, format_='rgb')[0]
+    return c
+
+def drawName(image, world):
+    """ Draw the name of this world on the zone image. """
+    fnt = ImageFont.truetype(fontfile, planet_label_size)
+    d = ImageDraw.Draw(image)
+    d.text((world.coordinates[0],
+            world.coordinates[1] + world.radius + (planet_label_size * .5)
+           ),
+           world.name,
+           font=fnt,
+           fill=(0, 0, 0, 128))
+
+def drawWorld(world, image):
+    """ Draw and label a world on the zone image. """
+    x, y = world.coordinates
+    r = world.radius
+    ul = (x-r, y-r)
+    lr = (x+r, y+r)
+    box = (ul, lr)
+    d = ImageDraw.Draw(image)
+    color = world.color
+    d.ellipse(box, fill=color, outline=color)
 
 def drawZone(thiszone, text):
     """ Render an image with all the worlds in the thiszone. """
@@ -280,11 +332,11 @@ def drawZone(thiszone, text):
 
     # draw the far and distant links
     for w in thiszone.distant + thiszone.far:
-        # angle = randint(1, 361) - 1
-        # point_pos picks a random angle
         x, y = thiszone.capital.coordinates
-        destination = point_pos(x, y, canvas[0])
-        print("Destination: %s,%s" % destination)
+        a = random.randint(0, 360)
+        # by using the width of the canvas as the distance, we 
+        # ensure that the line will run off the edge.  lazy.
+        destination = theta_point((x, y), canvas[0], a)
         d.line((thiszone.capital.coordinates, destination),
                fill=(0, 0, 0), width=2)
 
@@ -298,8 +350,6 @@ def drawZone(thiszone, text):
 
     # draw the world descriptions
     fnt = ImageFont.truetype(fontfile, descrip_label_size)
-    # text = textwrap.wrap(text, 40)
-    # text = '\n'.join(text)
     d.text((0, 0),
            text,
            font=fnt,
