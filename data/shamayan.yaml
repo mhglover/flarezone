@@ -1,0 +1,36 @@
+name: shamayan
+links: 4
+color: "blue"
+borders:
+  - Rim
+characteristics:
+  trouble:
+    0: "A war brewing with an inconsistent academic faction"
+    1: "Nothing left to study"
+    2: "Famous celebrity recently moved off-world"
+    3: "Critical research is being exploited by a weapons company"
+    4: "They are studying a baby hegemony here"
+  culture:
+    0: "At once studious and hilarious"
+    1: "A preference for comic media"
+    2: "Recently discovered Shakespeare"
+    3: "Half the population is secretly observing the other half"
+    4: "A paranoid culture of ominpresent mutual observation"
+  environment:
+    0: "Cities built around a great university"
+    1: "World carefully divided into a grid of parks and cities"
+    2: "Cities aboveground and underground excavations for storing records"
+    3: "A monoculture world with small research outposts"
+    4: "A world under construction"
+  history:
+    0: "Colonized within the last century"
+    1: "Bought from the locals a long time ago"
+    2: "Originally a bar on the way to something more interesting that no one remembers any more"
+    3: "Just one of many in the franchise"
+    4: "Constructed by a tailored hegemony"
+  proximity:
+    0: [1, 1, 1, 0] # One very close, one close, one far
+    1: [0, 3, 1, 0] # Three close, one far
+    2: [2, 2, 0, 1] # Two very close, two close, one distant
+    3: [4, 0, 1, 0] # Four close, one far
+    4: [0, 0, 0, 1] # One distant
