@@ -1,0 +1,36 @@
+name: aukumean
+links: 4
+color: "green"
+borders:
+  - Rim
+characteristics:
+  trouble:
+    0: "Out of touch with the galaxy"
+    1: "Being exploited by a Corporation"
+    2: "Immigrating species are upsetting the calm balance"
+    3: "An invading species is trying to take the place by force"
+    4: "There is nothing more to learn here and it’s time to move"
+  culture:
+    0: "Contemplative and pastoral"
+    1: "Desperately academic"
+    2: "Pursuing a new mysticism that worships economic exchange"
+    3: "Unusually tolerant of slavery"
+    4: "Contemplative and pastoral since wrecking that carries penalty of death"
+  environment:
+    0: "Huge cities integrated with the local flora"
+    1: "Thousands of tiny villages in harmony with the wilderness"
+    2: "Underground cities avoid disturbing the wilderness"
+    3: "An extreme world developed for aesthetic reasons"
+    4: "A research station that orbits a pristine wilderness world"
+  history:
+    0: "Established so long ago many believe this is the Aukumi home world"
+    1: "No one knows or cares how long we’ve been here"
+    2: "A research project from nearby"
+    3: "Won in a gambling game a long time ago"
+    4: "The result of a harrowing Horror eradication project"
+  proximity:
+    0: [1, 1, 1, 0] # One very close, one close, one far
+    1: [3, 0, 1, 0] # Three very close, one far
+    2: [2, 2, 0, 1] # Two very close, two close, one distant
+    3: [4, 0, 1, 0] # Four close, one far
+    4: [0, 0, 0, 1] # One distant
