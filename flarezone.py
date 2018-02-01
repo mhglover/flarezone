@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-""" Generate Worlds for the Elysium Flare RPG. """
-# pylint: disable=E1101,C0103, R0903, R0902
+""" Generate Zone charts for the Elysium Flare RPG. """
+# pylint: disable=invalid-name, too-many-locals, too-few-public-methods, too-many-instance-attributes
 from __future__ import print_function
-from random import randint
+import random
 import os
 import time
-from math import sin, cos, tan, radians, pi, degrees, sqrt, asin, atan
+from math import sin, cos, radians, degrees, sqrt, asin
 # from pprint import pprint
 from flask import Flask
 from PIL import Image, ImageDraw, ImageFont
@@ -34,9 +34,6 @@ class NameGenerator(object):
             for l in lex:
                 if l not in self.syllables:
                     self.syllables.append(l)
-
-        # div_index = len(syllables) / total_syllables
-        # div_index_str = str(div_index)[:4]
 
         self.size = len(self.syllables) + 1
         self.freq = [[0] * self.size for i in range(self.size)]
@@ -88,10 +85,6 @@ class World(object):
         # the dimensions of the final canvas
         xmax, ymax = canvas
 
-        # the margins - we don't want a world too close to the edge
-        # xmargin = int(xmax * .1)
-        # ymargin = int(ymax * .1)
-
         # the radius for the world
         r = random.randint(int(xmax * .03), int(xmax * .08))
 
@@ -134,10 +127,7 @@ class World(object):
     def getWorld(self):
         """ Print all the details about this world. """
         output = "%s\n" % self.name
-        # output += "Generated World - %s ---------------------------\n" % self.type.title()
         output += "%s" % self.getCharacteristics()
-        # output += "Coordinates: (%s, %s)\n" % (self.coordinates[0], self.coordinates[1])
-        # output += "Size: [%s]\n" % (self.radius * 2)
         return output
 
     def getCharacteristics(self):
@@ -180,11 +170,10 @@ class Zone(object):
         self.veryclose = []
         # very close worlds are tangential to the capital world
         # used to ensure our routes don't overlap worlds
-        heading = 0 
+        heading = 0
         # used to ensure our close worlds don't overlap the inner sphere worlds,
         # aka the very close worlds and the capital world
         inner_sphere = 0
-        prior_world = None
         for _ in xrange(p[0]):
             w = World(namer, worldtype=zonetype)
             wrad = w.radius
@@ -197,7 +186,7 @@ class Zone(object):
             # Rather than doing proper math to ensure worlds don't overlap, I
             # just picked a magic number through trial and error.  Fifty looks
             # about right.
-            magic = 50 
+            magic = 50
             heading = random.randint(heading + magic * .8,
                                      heading + magic * 1.2)
             w.coordinates = theta_point((capx, capy), dist, heading)
@@ -205,7 +194,6 @@ class Zone(object):
             tangent = findtan((capx, capy), (wx, wy, wrad))
             heading = heading + tangent
             w.color = getcolor("green")
-            prior_world = w
             self.veryclose.append(w)
 
         self.close = []
@@ -214,7 +202,7 @@ class Zone(object):
             wrad = w.radius
             # ensure these worlds are outside the inner sphere
             dist = random.randint(inner_sphere * 1.5, canvas[1] * .4)
-            magic = 50 
+            magic = 50
             heading = random.randint(heading + magic * .8,
                                      heading + magic * 1.2)
             w.coordinates = theta_point((capx, capy), dist+wrad, heading)
@@ -226,18 +214,16 @@ class Zone(object):
 
         self.distant = []
         for _ in xrange(p[2]):
-            name = namer.genName(suffix=False)
-            heading = random.randint(heading + 5, heading+20)
+            heading = random.randint(heading + 5, heading + 20)
             self.distant.append((self.type,
-                                 name,
+                                 namer.genName(suffix=False),
                                  heading))
 
         self.far = []
         for _ in xrange(p[3]):
-            name = namer.genName(suffix=False)
-            heading = random.randint(heading + 5, heading+20)
+            heading = random.randint(heading + 5, heading + 20)
             self.far.append((random.choice(self.borders),
-                             name,
+                             namer.genName(suffix=False),
                              heading))
 
     def getNeighbors(self):
@@ -282,13 +268,9 @@ def findtan(point, circ):
     : returns angle in degrees between the line from point to center and the
     tangent line
     """
-    # find the distance between the points
     x1, y1 = point
-    print("point: %s, %s" % point)
     x2, y2, radius = circ
-    print("circ: %s, %s, %s" % circ)
     hypotenuse = sqrt((x2 - x1)**2 + (y2 - y1)**2)
-    print("hypotenuse: %s" % hypotenuse)
     return degrees(asin(radius/hypotenuse))
 
 def getcolor(hue):
@@ -305,6 +287,28 @@ def drawName(image, world):
             world.coordinates[1] + world.radius + (planet_label_size * .5)
            ),
            world.name,
+           font=fnt,
+           fill=(0, 0, 0, 128))
+
+def drawLabel(image, link):
+    """ Draw a label at a given location.
+
+    :param image - an image object from Pillow
+    :param location - 2-tuple, (x, y) coordinates
+    :param text - string, words to put on the image
+
+    :returns nothing
+    """
+    capx, capy = (canvas[0] / 2, canvas[1] / 2)
+    distance = canvas[1] / 2.2
+    heading = link[2]
+    location = theta_point((capx, capy), distance, heading)
+    label = "%s:%s" % (link[0].title(), link[1])
+
+    fnt = ImageFont.truetype(fontfile, planet_label_size)
+    d = ImageDraw.Draw(image)
+    d.text(location,
+           label,
            font=fnt,
            fill=(0, 0, 0, 128))
 
@@ -325,6 +329,8 @@ def drawZone(thiszone, text):
     zoneimage = Image.new('RGB', canvas, background)
     d = ImageDraw.Draw(zoneimage)
 
+    capx, capy = thiszone.capital.coordinates
+
     # draw the close links
     for w in thiszone.veryclose + thiszone.close:
         d.line((thiszone.capital.coordinates, w.coordinates),
@@ -332,11 +338,10 @@ def drawZone(thiszone, text):
 
     # draw the far and distant links
     for w in thiszone.distant + thiszone.far:
-        x, y = thiszone.capital.coordinates
-        a = random.randint(0, 360)
-        # by using the width of the canvas as the distance, we 
+        a = w[2]
+        # by using the width of the canvas as the distance, we
         # ensure that the line will run off the edge.  lazy.
-        destination = theta_point((x, y), canvas[0], a)
+        destination = theta_point((capx, capy), canvas[0], a)
         d.line((thiszone.capital.coordinates, destination),
                fill=(0, 0, 0), width=2)
 
@@ -344,9 +349,13 @@ def drawZone(thiszone, text):
     for w in [thiszone.capital] + thiszone.veryclose + thiszone.close:
         drawWorld(world=w, image=zoneimage)
 
-    # draw the labels
+    # draw the labels for worlds
     for w in [thiszone.capital] + thiszone.veryclose + thiszone.close:
         drawName(world=w, image=zoneimage)
+
+    # draw the labels for outgoing links
+    for link in thiszone.distant + thiszone.far:
+        drawLabel(zoneimage, link)
 
     # draw the world descriptions
     fnt = ImageFont.truetype(fontfile, descrip_label_size)
