@@ -7,7 +7,7 @@ import os
 import time
 from math import sin, cos, radians, degrees, sqrt, asin
 # from pprint import pprint
-from flask import Flask, render_template
+from flask import Flask, render_template, url_for
 from PIL import Image, ImageDraw, ImageFont
 from numpy import random
 import yaml
@@ -117,11 +117,11 @@ class World(object):
         # if no world type is given, pick one at random from zones
         if worldtype is None:
             z = (random.randint(1, len(zones)) - 1)
-            self.type = zones.keys()[z]
+            self.region = zones.keys()[z]
         else:
-            self.type = zones[worldtype].name
+            self.region = zones[worldtype].name
 
-        self.chartables = zones[self.type].characteristics
+        self.chartables = zones[self.region].characteristics
         self.name = namer.genName()
 
         # the dimensions of the final canvas
@@ -185,26 +185,30 @@ class Zone(object):
 
     def __init__(self,
                  namer,
-                 zonetype=None):
+                 region=None,
+                 name=None):
 
         # pick a zonetype randomly if we weren't given one
-        if zonetype is None:
+        if region is None:
             z = (random.randint(0, len(zones)) - 1)
-            self.type = zones.keys()[z]
+            self.region = zones.keys()[z]
         else:
-            self.type = zones[zonetype].name
+            self.region = zones[region].name
 
-        self.zonename = namer.genName(suffix=False)
+        if name is not None:
+            self.zonename = name
+        else:
+            self.zonename = namer.genName(suffix=False)
 
         # note the other zones we border
-        self.borders = zones[self.type].borders
+        self.borders = zones[self.region].borders
 
         # generate our zone capital - this world is at
         # the center of the map
-        self.capital = World(namer, worldtype=self.type)
+        self.capital = World(namer, worldtype=self.region)
         capx, capy = self.capital.coordinates
         caprad = self.capital.radius
-        self.capital.color = getcolor(zones[self.type].color)
+        self.capital.color = getcolor(zones[self.region].color)
 
         # generate the other worlds in the zone
         p = self.capital.characteristics['proximity']
@@ -217,7 +221,7 @@ class Zone(object):
         # aka the very close worlds and the capital world
         inner_sphere = 0
         for _ in xrange(p[0]):
-            w = World(namer, worldtype=self.type)
+            w = World(namer, worldtype=self.region)
             wrad = w.radius
 
             # the inner sphere is the outer edge of the largest very close world
@@ -240,7 +244,7 @@ class Zone(object):
 
         self.close = []
         for _ in xrange(p[1]):
-            w = World(namer, worldtype=self.type)
+            w = World(namer, worldtype=self.region)
             wrad = w.radius
             # ensure these worlds are outside the inner sphere
             dist = random.randint(inner_sphere * 1.5, canvas[1] * .4)
@@ -257,7 +261,7 @@ class Zone(object):
         self.distant = []
         for _ in xrange(p[2]):
             heading = random.randint(heading + 5, heading + 20)
-            self.distant.append((self.type,
+            self.distant.append((self.region,
                                  namer.genName(suffix=False),
                                  heading))
 
@@ -280,11 +284,12 @@ class Zone(object):
             output += z.getWorld()
             output += "\n"
 
-        for z in self.distant:
-            output += "Distant %s Sector - %s\n\n" % (z[0].title(), z[1])
+        # for z in self.distant:
+        #     output += "Distant %s Sector -%s\n\n" \
+        #     % (z[0].title(), z[1])
 
-        for z in self.far:
-            output += "Far - %s:%s\n\n" % (z[0].title(), z[1])
+        # for z in self.far:
+        #     output += "Far - %s:%s\n\n" % (z[0].title(), z[1])
 
         return output
 
@@ -400,7 +405,7 @@ def drawZone(thiszone, text):
         drawLabel(zoneimage, link)
 
     # draw the zone label
-    label = "%s:%s" % (thiszone.type.title(), thiszone.zonename)
+    label = "%s:%s" % (thiszone.region.title(), thiszone.zonename)
     fnt = ImageFont.truetype(fontfile, zone_label_size)
     d.text((0, 0),
            label,
@@ -419,31 +424,43 @@ def cleanup():
             if os.path.isfile(ff) and "jpg" in f:
                 os.remove(ff)
 
-def genZone(region=None):
-    mynamer = NameGenerator(planets, suffixes)
-    myzone = Zone(mynamer, zonetype=region)
-    capital = myzone.capital
-    text = "%s\n" % capital.getWorld()
-    text += myzone.getNeighbors()
-    drawZone(myzone, text)
-    image = myzone.zonename + ".jpg"
-    return image, text, myzone.zonename, myzone.type
 
-@app.route('/region/<region>')
+    
+@app.route('/region/<region>/<name>/')
+@app.route('/region/<region>/')
 @app.route('/')
-def default(region=None):
+def default(region=None, name=None):
     """ Default endpoint - generate text defining a zone and the worlds in it."""
     cleanup()
-    image, text, name, region = genZone(region)
+
+    mynamer = NameGenerator(planets, suffixes)
+    
+    if name is not None:
+        name = name.title()
+    if region is not None:
+        region = region.lower()
+    myzone = Zone(mynamer, region=region, name=name)
+    name = myzone.zonename
+    region = myzone.region.title()
+    capital = myzone.capital
+    
+    text = "%s\n" % capital.getWorld()
+    text += myzone.getNeighbors()
+    
+    
+    drawZone(myzone, text)
+    image = myzone.zonename + ".jpg"
     return render_template('index.html', 
                            image=image,
                            text = text,
-                           region=region.title(),
+                           region=region,
                            name=name,
-                           font="Crushed")
+                           font="Crushed",
+                           zone=myzone
+                           )
 
 
 if __name__ == '__main__':
     cleanup()
-    # app.run(debug=True, host='::')
-    app.run(host='::')
+    app.run(debug=True, host='::')
+    # app.run(host='::')

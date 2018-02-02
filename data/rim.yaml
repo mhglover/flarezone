@@ -1,0 +1,40 @@
+name: rim
+links: 4
+color: "red"
+borders:
+  - Hub
+  - Shamayan
+  - Aukumean
+characteristics:
+  trouble:
+    0: "Placeholder"
+    1: "Placeholder"
+    2: "Placeholder"
+    3: "Placeholder"
+    4: "Placeholder"
+  culture:
+    0: "Placeholder"
+    1: "Placeholder"
+    2: "Placeholder"
+    3: "Placeholder"
+    4: "Placeholder"
+  environment:
+    0: "Placeholder"
+    1: "Placeholder"
+    2: "Placeholder"
+    3: "Placeholder"
+    4: "Placeholder"
+  history:
+    0: "Placeholder"
+    1: "Placeholder"
+    2: "Placeholder"
+    3: "Placeholder"
+    4: "Placeholder"
+  proximity:
+    # [very close, close, far, distant]
+    # These values are not correct - placeholders!
+    0: [1, 2, 0, 1] # One very close, two close
+    1: [2, 2, 0, 1] # Two very close, two close
+    2: [2, 2, 1, 1] # Two very close, two close, one far
+    3: [4, 0, 2, 1] # Four very close, two far
+    4: [0, 0, 0, 1] # One distant

@@ -4,20 +4,67 @@
     {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css?family=Crushed" rel="stylesheet"> 
-    <title>{{region}}:{{name}}</title>
+    <title>{{zone.region}}:{{zone.zonename}}</title>
     {% endblock %}
   </head>
 
 
-<div class="chart"><img src="/static/{{image}}" alt="{{text}}"></div>
+<div class="astrogator">
+  <div class="chart-display">
+    <img class="chart" src="/static/{{image}}" alt="{{text}}">
+    <div class="footer">
+      <h2>Astrogation Core Mk I</h2>
+      <h3>Binary Systems Corporation</h3>
+      
+    </div></div>
 
-<div class="panel">
-<h2>{{region}}:{{name}}</h2>
-<pre>
-{{text}}
-</pre>
-</div>
+  <div class="panel">
+  <h2>{{zone.region}}:{{zone.zonename}}</h2>
 
-<div class="footer">
-<h1>Binary Systems Corporation Astrogation Core Mk I</h1>
+    <strong>{{zone.capital.name}}</strong>
+    <ul>
+      {% for char in zone.capital.characteristics %}
+        {% if "proximity" not in char %}
+          <li><em>{{char}}</em> - {{zone.capital.characteristics[char]}}</li>
+        {%endif%}
+      {%endfor%}
+    </ul>
+
+  {% for world in zone.veryclose %}
+    <strong>{{world.name}}</strong>
+    <ul>
+      {% for char in world.characteristics %}
+        {% if "proximity" not in char %}
+          <li><em>{{char}}</em> - {{world.characteristics[char]}}</li>
+        {%endif%}
+      {%endfor%}
+    </ul>
+  {%endfor %}
+
+  {% for world in zone.close %}
+    <strong>{{world.name}}</strong>
+    <ul>
+      {% for char in world.characteristics %}
+        {% if "proximity" not in char %}
+          <li><em>{{char}}</em> - {{world.characteristics[char]}}</li>
+        {% endif %}
+      {%endfor%}
+    </ul>
+  {%endfor %}
+
+    {% for world in zone.distant %}
+    <strong>Distant {{world[0]}} Sector - <a href="{{url_for('default', region=world[0], name=world[1])}}">{{world[1]}}</a></strong><br>
+  {% endfor %}
+
+  {% for world in zone.far %}
+  <strong>Far {{world[0]}} Sector - <a href="{{url_for('default', region=world[0], name=world[1])}}">{{world[1]}}</a></strong><br>
+  {% endfor %}
+
+  <br>
+  <a href="https://www.patreon.com/halfjack">Support VSCA</a> on Patreon and play <a href="https://www.patreon.com/halfjack/posts?tag=elysium%20flare">Elysium Flare</a>!
+
+  
+  </div>
+
+  
 </div>
