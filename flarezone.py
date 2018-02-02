@@ -25,6 +25,16 @@ planets = []  # a corpus of planet names to use for random generation
 suffixes = [] # a list of planetary suffixes
 zones = {}  # a data structure of zone names (keys) and YAML-derived definition objects
 
+canvas = (2048, 1536)  # The size of the final image in pixels.
+# We'll work at double the size, then resize to smooth edges.
+
+# fontfile = 'fonts/GL-Nummernschild-Eng.otf'
+fontfile = 'fonts/telegrama_render.otf'
+zone_label_size = 64
+planet_label_size = 36
+descrip_label_size = 28
+
+
 # Read in the zone definition YAML files
 # and create a data structure for zone info:
 filenames = [fn for fn in os.listdir(datapath)
@@ -399,12 +409,14 @@ def drawZone(thiszone, text):
     out.save("static/%s.jpg" % thiszone.zonename)
 
 def cleanup():
-    # remove image files older than five minutes
+    # remove image files older than a certain time
+    # timeout = 60 * 5 # five minutes
+    timeout = 60 * 60 * 24 # one day
     path = "static"
     now = time.time()
     for f in os.listdir(path):
         ff = os.path.join(path, f)
-        if os.stat(ff).st_mtime < now - 300:
+        if os.stat(ff).st_mtime < now - timeout:
             if os.path.isfile(ff) and "jpg" in f:
                 os.remove(ff)
 
@@ -416,7 +428,6 @@ def genZone(region=None):
     text += myzone.getNeighbors()
     drawZone(myzone, text)
     image = myzone.zonename + ".jpg"
-    print(image)
     return image, text
 
 @app.route('/region/<region>')
@@ -434,13 +445,5 @@ def default():
     return render_template('index.html', image=image, alt=alt)
 
 if __name__ == '__main__':
-    canvas = (2048, 1536)  # The size of the final image in pixels.
-    # We'll work at double the size, then resize to smooth edges.
-
-    fontfile = 'fonts/GL-Nummernschild-Eng.otf'
-    fontfile = 'fonts/telegrama_render.otf'
-    zone_label_size = 64
-    planet_label_size = 36
-    descrip_label_size = 28
-
-    app.run(debug=True, host='::')
+    cleanup()
+    app.run(host='::')
