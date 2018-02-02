@@ -29,6 +29,7 @@ characteristics:
     3: "Started a Horror incursion for profit and still living it down"
     4: "Recently installed as-is by a hypercorporation"
   proximity:
+    # [very close, close, far, distant]
     0: [1, 2, 0, 0] # One very close, two close
     1: [2, 2, 0, 0] # Two very close, two close
     2: [2, 2, 1, 0] # Two very close, two close, one far

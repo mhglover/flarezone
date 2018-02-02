@@ -29,6 +29,7 @@ characteristics:
     3: "Just one of many in the franchise"
     4: "Constructed by a tailored hegemony"
   proximity:
+    # [very close, close, far, distant]
     0: [1, 1, 1, 0] # One very close, one close, one far
     1: [0, 3, 1, 0] # Three close, one far
     2: [2, 2, 0, 1] # Two very close, two close, one distant

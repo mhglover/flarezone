@@ -29,6 +29,7 @@ characteristics:
     3: "Won in a gambling game a long time ago"
     4: "The result of a harrowing Horror eradication project"
   proximity:
+    # [very close, close, far, distant]
     0: [1, 1, 1, 0] # One very close, one close, one far
     1: [3, 0, 1, 0] # Three very close, one far
     2: [2, 2, 0, 1] # Two very close, two close, one distant
