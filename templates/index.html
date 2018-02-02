@@ -1,6 +1,23 @@
 <!doctype html>
-<title>Binary Systems Corporation Navigational Computer Mk I</title>
-{% if image %}
-  <img src="/static/{{ image }}" alt="{{ alt }}">
-{% endif %}
+<html>
+  <head>
+    {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css?family=Crushed" rel="stylesheet"> 
+    <title>{{region}}:{{name}}</title>
+    {% endblock %}
+  </head>
 
+
+<div class="chart"><img src="/static/{{image}}" alt="{{text}}"></div>
+
+<div class="panel">
+<h2>{{region}}:{{name}}</h2>
+<pre>
+{{text}}
+</pre>
+</div>
+
+<div class="footer">
+<h1>Binary Systems Corporation Astrogation Core Mk I</h1>
+</div>
