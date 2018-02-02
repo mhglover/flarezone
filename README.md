@@ -96,14 +96,16 @@ We're using code derived from Sayam Qazi's [planet-name-generator](https://githu
 
 ## Fonts
 
-The following fonts are included for generating text upon zone images:
-* [GL-Nummernschild-Eng](https://fontlibrary.org/en/font/gl-nummernschild-eng) - License: [M+ Fonts Project License](https://en.wikipedia.org/wiki/M%2B_FONTS#Licensing)
-* [Telegrama](https://www.fontsquirrel.com/fonts/Telegrama) - License: [YOFonts License Agreement](https://www.fontsquirrel.com/license/Telegrama)
+We're using Google Fonts because we can both include the TrueType files in the application for generating labels on the images as well as refer to Google's hosted version of the font for rendering the HTML text in your browser. 
 
+The following fonts are included:
 
-## Authors
+* [Crushed] (https://fonts.google.com/specimen/Crushed?selection.family=Crushed)
 
-* Matthew Harris Glover - *Initial work* - [@mhglover](https://twitter.com/mhglover)
+## Contributors
+
+* Matthew Harris Glover - *Initial work* - [Twitter - @mhglover](https://twitter.com/mhglover)
+* Andrew Codispoti - *Zone Chart transcription* - [github](https://github.com/acodispo)
 
 <!-- See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project. -->
 

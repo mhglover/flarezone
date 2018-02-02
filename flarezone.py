@@ -26,14 +26,23 @@ suffixes = [] # a list of planetary suffixes
 zones = {}  # a data structure of zone names (keys) and YAML-derived definition objects
 
 canvas = (2048, 1536)  # The size of the final image in pixels.
-# We'll work at double the size, then resize to smooth edges.
+# We'll work at a large size, then resize to smooth edges.
+shrink = 3
 
 # fontfile = 'fonts/GL-Nummernschild-Eng.otf'
-fontfile = 'fonts/telegrama_render.otf'
-zone_label_size = 64
-planet_label_size = 36
-descrip_label_size = 28
+# fontfile = 'fonts/telegrama_render.otf'
+# fontfile = 'fonts/TextMeOne-Regular.ttf'
+fontfile = 'fonts/Crushed-Regular.ttf'
+fontname="Crushed"
+zone_label_size = 128
+planet_label_size = 72
+# descrip_label_size = 28
+planet_min = 75
+planet_max = 150
 
+# remove image files older than a certain time
+timeout = 60 * 5 # five minutes
+# timeout = 60 * 60 * 24 # one day
 
 # Read in the zone definition YAML files
 # and create a data structure for zone info:
@@ -119,7 +128,7 @@ class World(object):
         xmax, ymax = canvas
 
         # the radius for the world
-        r = random.randint(int(xmax * .03), int(xmax * .08))
+        r = random.randint(planet_min, planet_max)
 
         # coordinates of the sphere for this world
         # we place every world at the center of the map
@@ -159,7 +168,7 @@ class World(object):
 
     def getWorld(self):
         """ Print all the details about this world. """
-        output = "%s\n" % self.name
+        output = "%s\n" % (self.name)
         output += "%s" % self.getCharacteristics()
         return output
 
@@ -192,7 +201,7 @@ class Zone(object):
 
         # generate our zone capital - this world is at
         # the center of the map
-        self.capital = World(namer, worldtype=zonetype)
+        self.capital = World(namer, worldtype=self.type)
         capx, capy = self.capital.coordinates
         caprad = self.capital.radius
         self.capital.color = getcolor(zones[self.type].color)
@@ -208,7 +217,7 @@ class Zone(object):
         # aka the very close worlds and the capital world
         inner_sphere = 0
         for _ in xrange(p[0]):
-            w = World(namer, worldtype=zonetype)
+            w = World(namer, worldtype=self.type)
             wrad = w.radius
 
             # the inner sphere is the outer edge of the largest very close world
@@ -231,7 +240,7 @@ class Zone(object):
 
         self.close = []
         for _ in xrange(p[1]):
-            w = World(namer, worldtype=zonetype)
+            w = World(namer, worldtype=self.type)
             wrad = w.radius
             # ensure these worlds are outside the inner sphere
             dist = random.randint(inner_sphere * 1.5, canvas[1] * .4)
@@ -390,28 +399,18 @@ def drawZone(thiszone, text):
     for link in thiszone.distant + thiszone.far:
         drawLabel(zoneimage, link)
 
-    # draw the world descriptions
-    fnt = ImageFont.truetype(fontfile, descrip_label_size)
-    d.text((0, 0),
-           text,
-           font=fnt,
-           fill=(0, 0, 0, 255))
-
     # draw the zone label
     label = "%s:%s" % (thiszone.type.title(), thiszone.zonename)
     fnt = ImageFont.truetype(fontfile, zone_label_size)
-    d.text((0, canvas[1] - zone_label_size),
+    d.text((0, 0),
            label,
            font=fnt,
            fill=(0, 0, 0, 255))
 
-    out = zoneimage.resize((1024, 768), resample=1)
+    out = zoneimage.resize((canvas[0]/shrink, canvas[1]/shrink), resample=1)
     out.save("static/%s.jpg" % thiszone.zonename)
 
 def cleanup():
-    # remove image files older than a certain time
-    # timeout = 60 * 5 # five minutes
-    timeout = 60 * 60 * 24 # one day
     path = "static"
     now = time.time()
     for f in os.listdir(path):
@@ -428,22 +427,23 @@ def genZone(region=None):
     text += myzone.getNeighbors()
     drawZone(myzone, text)
     image = myzone.zonename + ".jpg"
-    return image, text
+    return image, text, myzone.zonename, myzone.type
 
 @app.route('/region/<region>')
-def region(region):
-    """ Generate a specific region. """
-    cleanup()
-    image, alt = genZone(region=region)
-    return render_template('index.html', image=image, alt=alt)
-
 @app.route('/')
-def default():
+def default(region=None):
     """ Default endpoint - generate text defining a zone and the worlds in it."""
     cleanup()
-    image, alt = genZone()
-    return render_template('index.html', image=image, alt=alt)
+    image, text, name, region = genZone(region)
+    return render_template('index.html', 
+                           image=image,
+                           text = text,
+                           region=region.title(),
+                           name=name,
+                           font="Crushed")
+
 
 if __name__ == '__main__':
     cleanup()
+    # app.run(debug=True, host='::')
     app.run(host='::')
