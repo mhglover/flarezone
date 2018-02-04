@@ -7,7 +7,7 @@ import os
 import time
 from math import sin, cos, radians, degrees, sqrt, asin
 # from pprint import pprint
-from flask import Flask, render_template, url_for
+from flask import Flask, render_template, redirect, url_for
 from PIL import Image, ImageDraw, ImageFont
 from numpy import random
 import yaml
@@ -33,7 +33,7 @@ shrink = 3
 # fontfile = 'fonts/telegrama_render.otf'
 # fontfile = 'fonts/TextMeOne-Regular.ttf'
 fontfile = 'fonts/Crushed-Regular.ttf'
-fontname="Crushed"
+fontname = "Crushed"
 zone_label_size = 128
 planet_label_size = 72
 # descrip_label_size = 28
@@ -65,10 +65,13 @@ with open(datapath + "planet-suffixes.txt", "r") as sfile:
 class NameGenerator(object):
     """ Build sci-fi planet names. """
 
-    def __init__(self, planetnames, suffixnames):
+    def __init__(self, planetnames, suffixnames, zonename=None):
         total_syllables = 0
 
+        self.generatednames = []
         self.syllables = []
+
+        self.zonename = zonename
 
         for p in planetnames:
             lex = p.split("-")
@@ -106,14 +109,22 @@ class NameGenerator(object):
         planet_name = planet_name.title()
         if self.suffixes[suffix_index] and suffix:
             planet_name += " " + self.suffixes[suffix_index]
-        return planet_name.rstrip()
+        planet_name = planet_name.rstrip()
+        while planet_name in self.generatednames:
+            planet_name = self.genName(suffix=suffix)
+        if self.zonename:
+            while planet_name in self.zonename:
+                print(self.zonename)
+                planet_name = self.genName(suffix=suffix)
+        self.generatednames.append(planet_name)
+        print(planet_name)
+        return planet_name
 
 class World(object):
     """ Generate a World object. """
 
     def __init__(self, namer, worldtype=None):
         """ Create the world. """
-
         # if no world type is given, pick one at random from zones
         if worldtype is None:
             z = (random.randint(1, len(zones)) - 1)
@@ -186,7 +197,8 @@ class Zone(object):
     def __init__(self,
                  namer,
                  region=None,
-                 name=None):
+                 name=None,
+                 rand_color=None):
 
         # pick a zonetype randomly if we weren't given one
         if region is None:
@@ -198,7 +210,7 @@ class Zone(object):
         if name is not None:
             self.zonename = name
         else:
-            self.zonename = namer.genName(suffix=False)
+            self.zonename = namer.genName(suffix=False, zone=self.zonename)
 
         # note the other zones we border
         self.borders = zones[self.region].borders
@@ -208,7 +220,7 @@ class Zone(object):
         self.capital = World(namer, worldtype=self.region)
         capx, capy = self.capital.coordinates
         caprad = self.capital.radius
-        self.capital.color = getcolor(zones[self.region].color)
+        self.capital.color = getcolor(zones[self.region].color, rand_color)
 
         # generate the other worlds in the zone
         p = self.capital.characteristics['proximity']
@@ -239,12 +251,13 @@ class Zone(object):
             wx, wy = w.coordinates
             tangent = findtan((capx, capy), (wx, wy, wrad))
             heading = heading + tangent
-            w.color = getcolor("green")
+            w.color = getcolor("green", rand_color)
             self.veryclose.append(w)
 
         self.close = []
         for _ in xrange(p[1]):
-            w = World(namer, worldtype=self.region)
+            w = World(namer,
+                      worldtype=self.region)
             wrad = w.radius
             # ensure these worlds are outside the inner sphere
             dist = random.randint(inner_sphere * 1.5, canvas[1] * .4)
@@ -255,7 +268,7 @@ class Zone(object):
             wx, wy = w.coordinates
             tangent = findtan((capx, capy), (wx, wy, wrad))
             heading = heading + tangent
-            w.color = getcolor("red")
+            w.color = getcolor("red", rand_color)
             self.close.append(w)
 
         self.distant = []
@@ -320,9 +333,8 @@ def findtan(point, circ):
     hypotenuse = sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return degrees(asin(radius/hypotenuse))
 
-def getcolor(hue):
+def getcolor(hue, rand_color):
     """ Generate a random color from a base hue and return an rgb value. """
-    rand_color = randomcolor.RandomColor()
     c = rand_color.generate(hue=hue, format_='rgb')[0]
     return c
 
@@ -370,7 +382,7 @@ def drawWorld(world, image):
     color = world.color
     d.ellipse(box, fill=color, outline=color)
 
-def drawZone(thiszone, text):
+def drawZone(thiszone):
     """ Render an image with all the worlds in the thiszone. """
     background = (240, 240, 240)
     zoneimage = Image.new('RGB', canvas, background)
@@ -415,7 +427,20 @@ def drawZone(thiszone, text):
     out = zoneimage.resize((canvas[0]/shrink, canvas[1]/shrink), resample=1)
     out.save("static/%s.jpg" % thiszone.zonename)
 
+def wordstoseed(words):
+    """ convert a list of words into an integer """
+    print(words)
+    # concatenate the letters, convert them to numbers
+    s = int(''.join([str(ord(char) - 96) for char in ''.join(words).lower()]))
+    # Random seeds have to be less than 2^32-1
+    # so we cut it down until it fits. Dividing by seven seems to give good
+    # "randomness".
+    while s > (2**32 - 1):
+        s = int(s / 7)
+    return s
+
 def cleanup():
+    """ Remove old image files. """
     path = "static"
     now = time.time()
     for f in os.listdir(path):
@@ -424,40 +449,64 @@ def cleanup():
             if os.path.isfile(ff) and "jpg" in f:
                 os.remove(ff)
 
-
-    
-@app.route('/region/<region>/<name>/')
-@app.route('/region/<region>/')
-@app.route('/')
-def default(region=None, name=None):
+@app.route('/region/<region>/<zonename>/')
+def zonemaker(region, zonename):
     """ Default endpoint - generate text defining a zone and the worlds in it."""
     cleanup()
 
-    mynamer = NameGenerator(planets, suffixes)
-    
-    if name is not None:
-        name = name.title()
-    if region is not None:
+    if region is None:
+        region = random.choice(zones.keys()).lower()
+    else:
         region = region.lower()
-    myzone = Zone(mynamer, region=region, name=name)
+
+    if zonename is None:
+        zonenamer = NameGenerator(planets, suffixes)
+        zonename = zonenamer.genName(suffix=False).title()
+    else:
+        zonename = zonename.title()
+
+    seed = wordstoseed([region, zonename])
+    rand_color = randomcolor.RandomColor(seed=seed)
+    random.seed(seed)
+    print(region, zonename)
+    print(seed)
+
+    mynamer = NameGenerator(planets, suffixes, zonename=zonename)
+    myzone = Zone(mynamer, region=region, name=zonename, rand_color=rand_color)
     name = myzone.zonename
     region = myzone.region.title()
     capital = myzone.capital
-    
+
     text = "%s\n" % capital.getWorld()
     text += myzone.getNeighbors()
-    
-    
-    drawZone(myzone, text)
+
+    drawZone(myzone)
     image = myzone.zonename + ".jpg"
-    return render_template('index.html', 
+    return render_template('index.html',
                            image=image,
-                           text = text,
+                           text=text,
                            region=region,
                            name=name,
                            font="Crushed",
                            zone=myzone
-                           )
+                          )
+
+
+@app.route('/region/<region>/')
+@app.route('/')
+def zonefinder(region=None):
+    random.seed()
+    if region is None:
+        region = random.choice(zones.keys()).lower()
+    else:
+        region = region.lower()
+
+    zonenamer = NameGenerator(planets, suffixes)
+    zonename = zonenamer.genName(suffix=False).title()
+    print(region)
+    print(zonename)
+
+    return redirect(url_for('zonemaker', region=region.title(), zonename=zonename.title()))
 
 
 if __name__ == '__main__':

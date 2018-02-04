@@ -4,7 +4,7 @@
     {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css?family=Crushed" rel="stylesheet"> 
-    <title>{{zone.region}}:{{zone.zonename}}</title>
+    <title>{{zone.region.title()}}:{{zone.zonename}}</title>
     {% endblock %}
   </head>
 
@@ -19,7 +19,7 @@
     </div></div>
 
   <div class="panel">
-  <h2>{{zone.region}}:{{zone.zonename}}</h2>
+  <h2>{{zone.region.title()}}:{{zone.zonename}}</h2>
 
     <strong>{{zone.capital.name}}</strong>
     <ul>
@@ -53,11 +53,11 @@
   {%endfor %}
 
     {% for world in zone.distant %}
-    <strong>Distant {{world[0]}} Sector - <a href="{{url_for('default', region=world[0], name=world[1])}}">{{world[1]}}</a></strong><br>
+    <strong>Distant {{world[0]}} Sector - <a href="{{url_for('zonemaker', region=world[0].title(), zonename=world[1])}}">{{world[1]}}</a></strong><br>
   {% endfor %}
 
   {% for world in zone.far %}
-  <strong>Far {{world[0]}} Sector - <a href="{{url_for('default', region=world[0], name=world[1])}}">{{world[1]}}</a></strong><br>
+  <strong>Far {{world[0]}} Sector - <a href="{{url_for('zonemaker', region=world[0].title(), zonename=world[1])}}">{{world[1]}}</a></strong><br>
   {% endfor %}
 
   <br>
