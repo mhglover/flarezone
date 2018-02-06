@@ -1,0 +1,39 @@
+name: orphean
+links: 4
+color: "red"
+borders:
+  - Rim
+  - Gulf
+characteristics:
+  trouble:
+    0: "Friction between the Orpheani and the others"
+    1: "A mystic node has lost its power"
+    2: "A corporeal world has generated a powerful mystic node"
+    3: "The Orpheani need you out by noon Friday"
+    4: "A Horror is being formed by crazed Orpheani mystics"
+  culture:
+    0: "Quiet and meditative"
+    1: "Rich intellectual exchanges between regular species and Dreamers"
+    2: "Dreamers almost never come here"
+    3: "Only Dreamers live here"
+    4: "Corporeals are manipulated and studied by an invisible Dreamer class"
+  environment:
+    0: "Crystal cities surrounded by tamed wilderness"
+    1: "Vast crystal cities and tiny parks"
+    2: "A wilderness below and crystal cities in the air"
+    3: "A network of diamond asteroids"
+    4: "Nothing at all, just space where the Orpheani congregate"
+  history:
+    0: "Orpheani have been here forever, everyone else is recent"
+    1: "Orpheani mostly left when corporeals become interested in the world"
+    2: "Only corporeal species have ever lived here, probably"
+    3: "Corporeal species wrested the world from the Orpheani by force"
+    4: "A million years of co-habitation between Dreamers and one other species"
+  proximity:
+    # [very close, close, far, distant]
+    # These values are not correct - placeholders!
+    0: [1, 1, 1, 0] # One very close, one close, one far
+    1: [0, 2, 1, 0] # Two close, one far
+    2: [2, 2, 0, 1] # Two very close, two close, one distant
+    3: [0, 3, 1, 0] # Three close, one far
+    4: [0, 0, 0, 1] # One distant

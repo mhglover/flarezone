@@ -1,0 +1,39 @@
+name: aarian
+links: 4
+color: "red"
+borders:
+  - Rim
+  - Gulf
+characteristics:
+  trouble:
+    0: "Another species is being rude"
+    1: "A psychic plague is disrupting normal commerce"
+    2: "The current scheduled war is coming to an end"
+    3: "The local Experiment is not going well at all"
+    4: "Everyone is leaving and no one will say why and the psychic channels are completely empty"
+  culture:
+    0: "Strange and wonderful"
+    1: "Disdainful of outsiders"
+    2: "Actively resentful of outsiders"
+    3: "A slaver experiment is being dismantled"
+    4: "Worship of Horror ancestors is distressingly common"
+  environment:
+    0: "Huge cities surrounded by radioactive wasteland"
+    1: "A husk of a world savaged by aeons of war"
+    2: "The ground is so polluted that the cities have to fly"
+    3: "An idyllic wilderness that is entirely synthetic"
+    4: "A beautiful wilderness in the process of being dismantled to make an orbital factory"
+  history:
+    0: "Been here for thousands of generations"
+    1: "Won from another Aaru family in a war"
+    2: "Has changed hands so many times that it's formalized now"
+    3: "Exists solely to maintain a historical record of itself"
+    4: "World was fabricated from a Horror back in the Disruption Wars"
+  proximity:
+    # [very close, close, far, distant]
+    # These values are not correct - placeholders!
+    0: [1, 1, 1, 0] # One very close, one close, one far
+    1: [0, 3, 1, 0] # Three close, one far
+    2: [2, 2, 0, 1] # Two very close, two close, one distant
+    3: [4, 0, 1, 0] # Four close, one far
+    4: [0, 0, 0, 1] # One distant

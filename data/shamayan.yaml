@@ -3,6 +3,7 @@ links: 4
 color: "blue"
 borders:
   - Rim
+  - Gulf
 characteristics:
   trouble:
     0: "A war brewing with an inconsistent academic faction"

@@ -10,16 +10,36 @@
 
 
 <div class="astrogator">
+    <h2 class="header"><a href="{{url_for('zonefinder')}}">Astrogation Core Mk I</a> - <a href="{{url_for('zonefinder', region=zone.region.title())}}">{{zone.region.title()}}</a>:<a href="{{url_for('zonemaker', region=zone.region.title(), zonename=zone.zonename.title())}}">{{zone.zonename.title()}}</a></h2>
   <div class="chart-display">
-    <img class="chart" src="/static/{{image}}" alt="{{text}}">
-    <div class="footer">
-      <h2>Astrogation Core Mk I</h2>
-      <h3>Binary Systems Corporation</h3>
-      
-    </div></div>
+      <img class="chart" src="/static/{{image}}" alt="{{text}}">
+      <h3 class="patreon"><a href="https://www.patreon.com/halfjack">Support VSCA</a> on Patreon and play <a href="https://www.patreon.com/halfjack/posts?tag=elysium%20flare">Elysium Flare</a></h3>
+      <h3 class="corp">Binary Systems Corporation</h3>
+  
+    {% if zone.distant %}
+      <div class="distant">
+          <strong>Jump Routes To Other {{ zone.region }} Sectors</strong>
+          <ul>
+          {% for world in zone.distant %}
+              <li><a href="{{url_for('zonemaker', region=world[0].title(), zonename=world[1])}}">{{world[1]}}</a></li>
+          {% endfor %}
+          </ul>
+      </div>
+    {% endif %}
+
+    {% if zone.far %}
+      <div class="far">
+          <strong>Jump Routes Outside The Region</strong>
+          <ul>
+          {% for world in zone.far %}
+              <li><a href="{{url_for('zonemaker', region=world[0].title(), zonename=world[1])}}">{{world[0]}}:{{world[1]}}</a></li>
+          {% endfor %}
+          </ul>
+      </div>
+    {% endif %}
+  </div>
 
   <div class="panel">
-  <h2>{{zone.region.title()}}:{{zone.zonename}}</h2>
 
     <strong>{{zone.capital.name}}</strong>
     <ul>
@@ -51,18 +71,6 @@
       {%endfor%}
     </ul>
   {%endfor %}
-
-    {% for world in zone.distant %}
-    <strong>Distant {{world[0]}} Sector - <a href="{{url_for('zonemaker', region=world[0].title(), zonename=world[1])}}">{{world[1]}}</a></strong><br>
-  {% endfor %}
-
-  {% for world in zone.far %}
-  <strong>Far {{world[0]}} Sector - <a href="{{url_for('zonemaker', region=world[0].title(), zonename=world[1])}}">{{world[1]}}</a></strong><br>
-  {% endfor %}
-
-  <br>
-  <a href="https://www.patreon.com/halfjack">Support VSCA</a> on Patreon and play <a href="https://www.patreon.com/halfjack/posts?tag=elysium%20flare">Elysium Flare</a>!
-
   
   </div>
 

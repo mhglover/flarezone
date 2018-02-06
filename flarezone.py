@@ -436,7 +436,7 @@ def wordstoseed(words):
     # so we cut it down until it fits. Dividing by seven seems to give good
     # "randomness".
     while s > (2**32 - 1):
-        s = int(s / 7)
+        s = int(int(str(s)[1:]) / 7)
     return s
 
 def cleanup():

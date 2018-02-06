@@ -1,0 +1,39 @@
+name: tianen
+links: 4
+color: "red"
+borders:
+  - Gulf
+  - Rim
+characteristics:
+  trouble:
+    0: "The legal system here is out of hand"
+    1: "The fashion industry is crashing"
+    2: "Two rival fashion designers are in a legal shooting war"
+    3: "World was accidentally sold to the Shamayans"
+    4: "The ban on disentegrators expires next week and people are stocking up"
+  culture:
+    0: "Brisk and cosmopolitan"
+    1: "Cut-throat legal shennanigans"
+    2: "Starkly divided into separate, bigoted, fashion designer camps. Pick a side."
+    3: "Tiants made themselves illegal by accident and are all leaving."
+    4: "Tiants made everyone else illegal and you need to be out by Sunday."
+  environment:
+    0: "Towering metropoli surrounded by factory parks"
+    1: "A small but busy city on a wild world"
+    2: "An airless rock filled with glittering structures and alien music"
+    3: "Ten thousand spacecraft that don't work any more, jury rigged together"
+    4: "Small towns surrounded by lush wilderness"
+  history:
+    0: "Been like this since the beginning of recorded history"
+    1: "Installed exactly like this six months ago"
+    2: "A corporate experiment"
+    3: "A scientific experiment"
+    4: "World was moved to escape a hegemonic plague"
+  proximity:
+    # [very close, close, far, distant]
+    # These values are not correct - placeholders!
+    0: [1, 1, 1, 0] # One very close, one close, one far
+    1: [0, 3, 1, 0] # Three close, one far
+    2: [2, 2, 0, 1] # Two very close, two close, one distant
+    3: [4, 0, 1, 0] # Four close, one far
+    4: [0, 0, 0, 1] # One distant

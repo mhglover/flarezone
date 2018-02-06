@@ -1,0 +1,40 @@
+name: gulf
+links: 4
+color: "red"
+borders:
+  - Rim
+  - Shamayan
+  - Aukumean
+characteristics:
+  trouble:
+    0: "So incredibly lonely"
+    1: "Missing vital supplies"
+    2: "Something has gone terribly wrong with the research"
+    3: "Someone wants this world for their own"
+    4: "We keep a Horror at bay"
+  culture:
+    0: "Studious"
+    1: "Strict ritual behaviour"
+    2: "Making a ton of money selling tickets"
+    3: "Desperately occupied keeping things working"
+    4: "No one lives here"
+  environment:
+    0: "An airless rock orbiting a red dwarf"
+    1: "An airless rock orbiting an exotic star"
+    2: "The moon of a gas giant in a trianry system"
+    3: "An artifcial world (ringworld, Dyson sphere, etc.)"
+    4: "Just an orbiting computer station and a vast virtual world to plug into"
+  history:
+    0: "Brand new and defensive"
+    1: "Hundreds of years of directed study"
+    2: "A thousand years of combat, constantly switching owners"
+    3: "History is illegal. No one will talk about it."
+    4: "Installed within the last ten years as a kind of world-puppet operated by a Horror"
+  proximity:
+    # [very close, close, far, distant]
+    # These values are not correct - placeholders!
+    0: [0, 1, 0, 0] # One close
+    1: [1, 0, 0, 0] # One very close
+    2: [0, 1, 1, 0] # One close, one far
+    3: [0, 0, 1, 1] # One far, one distant
+    4: [0, 0, 0, 2] # Two distant

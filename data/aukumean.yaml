@@ -3,6 +3,7 @@ links: 4
 color: "green"
 borders:
   - Rim
+  - Gulf
 characteristics:
   trouble:
     0: "Out of touch with the galaxy"

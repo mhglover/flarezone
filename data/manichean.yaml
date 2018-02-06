@@ -1,0 +1,39 @@
+name: manichean
+links: 4
+color: "red"
+borders:
+  - Rim
+  - Gulf
+characteristics:
+  trouble:
+    0: "A competitor is getting out of hand"
+    1: "Trade disrupted by a nearby war"
+    2: "Ecologists threaten to shut us down"
+    3: "There's a hot war going on"
+    4: "This factory seems to be doing what it wants. Cool!"
+  culture:
+    0: "Individualistic"
+    1: "Tolerated crime and occasional gunfire"
+    2: "The Industry owner rules with an iron fist"
+    3: "Everyone's plugged into the latest entertainment"
+    4: "The War is just part of how this whole thing works"
+  environment:
+    0: "A lovely world nearly ruined by industry"
+    1: "A lovely world nearly ruined by warfare"
+    2: "A world that balances industry, cities, and the wilds"
+    3: "A ring of factories around a star"
+    4: "A sunless, airless rock hurling through the interstellar void"
+  history:
+    0: "One species has dominated here but others are coming in fast"
+    1: "Many years of diversity"
+    2: "A new colony"
+    3: "Built on the ruins of an extinct human colony"
+    4: "Thousands of years of industry and industrial espionage"
+  proximity:
+    # [very close, close, far, distant]
+    # These values are not correct - placeholders!
+    0: [1, 1, 1, 0] # One very close, one close, one far
+    1: [0, 3, 1, 0] # Three close, one far
+    2: [2, 2, 0, 1] # Two very close, two close, one distant
+    3: [0, 4, 1, 0] # Four close, one far
+    4: [0, 0, 0, 1] # One distant

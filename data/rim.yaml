@@ -5,36 +5,41 @@ borders:
   - Hub
   - Shamayan
   - Aukumean
+  - Manichean
+  - Orphean
+  - Tianen
+  - Aarian
+  - Gulf
 characteristics:
   trouble:
-    0: "Placeholder"
-    1: "Placeholder"
-    2: "Placeholder"
-    3: "Placeholder"
-    4: "Placeholder"
+    0: "Local bandits make trouble"
+    1: "Something terribly wrong with the crops"
+    2: "A corporation is ravaging the system"
+    3: "A missing resource (water, air...)"
+    4: "A Hub empire has suddenly become interested"
   culture:
-    0: "Placeholder"
-    1: "Placeholder"
-    2: "Placeholder"
-    3: "Placeholder"
-    4: "Placeholder"
+    0: "Quiet and simple"
+    1: "Work hard, play hard"
+    2: "Lawless and making a packet on it"
+    3: "Thoughtless obedience to an overlord"
+    4: "Only one person lives here. It’s their world."
   environment:
-    0: "Placeholder"
-    1: "Placeholder"
-    2: "Placeholder"
-    3: "Placeholder"
-    4: "Placeholder"
+    0: "Mostly lush dangerous wilderness"
+    1: "A monoculture world, hostile to humans"
+    2: "An asteroid belt that imports its air"
+    3: "A strange accident of a world like a gas ring around a neutron star"
+    4: "A constructed world with unknown purpose"
   history:
-    0: "Placeholder"
-    1: "Placeholder"
-    2: "Placeholder"
-    3: "Placeholder"
-    4: "Placeholder"
+    0: "Colonized within living memory"
+    1: "Fled religious persecution"
+    2: "Nothing but farming and psychic research for a thousand years"
+    3: "Source of the toughest mercenary soldiers in the galaxy"
+    4: "A million years of peace and no one knows why"
   proximity:
     # [very close, close, far, distant]
     # These values are not correct - placeholders!
-    0: [1, 2, 0, 1] # One very close, two close
-    1: [2, 2, 0, 1] # Two very close, two close
-    2: [2, 2, 1, 1] # Two very close, two close, one far
-    3: [4, 0, 2, 1] # Four very close, two far
-    4: [0, 0, 0, 1] # One distant
+    0: [0, 1, 1, 0] # One close, one far
+    1: [1, 0, 1, 0] # One very close, one far
+    2: [0, 1, 1, 1] # One close, one far, one distant
+    3: [1, 0, 0, 0] # One very close
+    4: [0, 0, 0, 2] # Two distant
