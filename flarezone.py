@@ -5,13 +5,16 @@ from __future__ import print_function
 import random
 import os
 import time
-from math import sin, cos, radians, degrees, sqrt, asin
-# from pprint import pprint
+from math import sin, cos, radians, degrees, sqrt, asin, atan2
+from pprint import pprint
 from flask import Flask, render_template, redirect, url_for
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from numpy import random
 import yaml
 import randomcolor
+from networkx import Graph, draw_networkx
+import networkx as nx
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 
@@ -35,10 +38,10 @@ shrink = 3
 fontfile = 'fonts/Crushed-Regular.ttf'
 fontname = "Crushed"
 zone_label_size = 128
-planet_label_size = 72
+planet_label_size = 50
 # descrip_label_size = 28
-planet_min = 75
-planet_max = 150
+planet_min = 40
+planet_max = 80
 
 # remove image files older than a certain time
 timeout = 60 * 5 # five minutes
@@ -63,9 +66,17 @@ with open(datapath + "planet-suffixes.txt", "r") as sfile:
     suffixes = sfile.read().split("\n")
 
 class NameGenerator(object):
-    """ Build sci-fi planet names. """
+    """ Build sci-fi planet names.
+    
+    :param planetnames - a list of planet names read from a file
+    :param suffixnames - a list of suffixnames read from a file
+    :param zonename - a zone name to ensure we don't duplicate it with a planet name
+    
+    :method genName(suffix=True/False)
 
-    def __init__(self, planetnames, suffixnames, zonename=None):
+    :returns - a NameGenerator object"""
+
+    def __init__(self, planetnames, suffixnames, zonename=''):
         total_syllables = 0
 
         self.generatednames = []
@@ -110,55 +121,127 @@ class NameGenerator(object):
         if self.suffixes[suffix_index] and suffix:
             planet_name += " " + self.suffixes[suffix_index]
         planet_name = planet_name.rstrip()
-        while planet_name in self.generatednames:
-            planet_name = self.genName(suffix=suffix)
-        if self.zonename:
-            while planet_name in self.zonename:
-                print(self.zonename)
-                planet_name = self.genName(suffix=suffix)
         self.generatednames.append(planet_name)
-        print(planet_name)
         return planet_name
 
-class World(object):
-    """ Generate a World object. """
+class Sector(Graph):
+    """ Represents a set of interconnected star systems. """
 
-    def __init__(self, namer, worldtype=None):
-        """ Create the world. """
-        # if no world type is given, pick one at random from zones
-        if worldtype is None:
-            z = (random.randint(1, len(zones)) - 1)
-            self.region = zones.keys()[z]
+    def __init__(self,
+                 data=None,
+                 file=None,
+                 region=None,
+                 name='',
+                 seed=None,
+                 **attr):
+        Graph.__init__(self, data=data, name=name, **attr)
+        region = region.lower()
+        name = name.lower()
+
+        self.name = name
+        self.region = region
+        self.chartables = zones[region].characteristics
+        self.namer = NameGenerator(planets, suffixes, zonename=name)
+        self.colorist = randomcolor.RandomColor(seed=seed)
+
+        # generate the capital world
+        self.genWorld()
+
+        # generate the worlds linked from the capital world
+        self.genWorlds()
+
+        # generate second order worlds
+        self.genWorlds()
+
+        # print("Sector - %s:%s" % (self.region, self.name))
+        
+        if "distant" in [i[1] for i in self.nodes(data="distance")]:
+            self.distant = True
         else:
-            self.region = zones[worldtype].name
+            self.distant = False
+        
+        if "far" in [i[1] for i in self.nodes(data="distance")]:
+            self.far = True
+        else:
+            self.far = False
 
-        self.chartables = zones[self.region].characteristics
-        self.name = namer.genName()
+        iterations = 150
+        pos = nx.spring_layout(self,
+                               k=.5,
+                               iterations=iterations,
+                               center=[1, 1],
+                               weight='weight')
 
-        # the dimensions of the final canvas
-        xmax, ymax = canvas
+        labels = {key:self.node[key]['label'] for key in self.nodes().keys()}
+        for world in pos:
+            x, y = pos[world]
+            self.node[world]['x'] = x * (canvas[0] / 2 - 150) + 75
+            self.node[world]['y'] = y * (canvas[1] / 2 - 150) + 75
+            pos[world] = (x, y)
 
-        # the radius for the world
-        r = random.randint(planet_min, planet_max)
+        for world in pos:
+            if "far" in self.node[world]['distance'] or "distant" in self.node[world]['distance']:
+                origin_world = self.adj[world].keys()[0]
+                # print(world, origin_world)
+                coords = [self.node[world]['x'],
+                          self.node[world]['y']]
+                origin = [self.node[origin_world]['x'],
+                          self.node[origin_world]['y']]
+                
+                # print(coords, origin)
 
-        # coordinates of the sphere for this world
-        # we place every world at the center of the map
-        # and for linked worlds, we change that to be
-        # relative to the capital world
-        x = xmax / 2
-        y = ymax / 2
-
-        self.radius = r
-        self.coordinates = (x, y)
-
-        # roll up characteristics for this world
-        self.genCharacteristics()
+        # draw_networkx(self, pos, labels=labels)
+        # plt.savefig("static/plot-%s.jpg" % self.name, dpi=1000)
+        # plt.close()
         return
 
-    def genCharacteristics(self):
-        """ Roll characteristics for a type and add them to the object. """
-        chartables = self.chartables
-        characteristic_list = chartables.keys()
+    def genWorlds(self):
+        distances = ['veryclose', 'close', 'far', 'distant']
+
+        for (world, data) in self.nodes(data=True):
+            if data['linked'] is False:
+                prox = data['characteristics']['proximity']
+                for distance in xrange(len(distances)):
+                    for _ in xrange(prox[distance]):
+                        self.genWorld(anchor=world, distance=distances[distance])
+                self.node(world).linked = True
+
+        return
+
+    def genWorld(self, anchor=None, distance=''):
+        """ Create a world and its characteristics.
+        Adds a node and edges to the graph, and attributes to the node.
+
+        :param anchor - The name of the world connected to this one.
+        :param distance - The length of the jump from the anchor world.
+
+        :attribute name - The name of the world (string).
+        :attribute region - The region this world is in (string).
+        :attribute characteristics - A dictionary of details about the world.
+
+        :returns string - The name of the generated world.
+        """
+
+        if len(self.nodes) > 16:
+            return
+
+        linked = False
+
+        if "far" in distance:
+            region = random.choice(zones[self.region].borders)
+        else:
+            region = self.region
+
+        if "far" in distance or "distant" in distance:
+            name = self.namer.genName(suffix=False)
+            label = "%s:%s" % (region.title(), name)
+            linked = True
+        else:
+            name = self.namer.genName()
+            label = name
+
+        characteristics = {}
+        characteristic_list = self.chartables.keys()
         self.characteristics = {key: 0 for key in characteristic_list}
         distributions = [
             [4, 1, 0, 0, 0],
@@ -170,141 +253,48 @@ class World(object):
         ]
         distribution = distributions[(random.randint(1, 5) - 1)]
         random.shuffle(distribution)
-        self.characteristics = dict(zip(characteristic_list, distribution))
+        characteristics = dict(zip(characteristic_list, distribution))
 
-        for each in self.characteristics:
-            cost = self.characteristics[each]
-            result = chartables[each][cost]
-            self.characteristics[each] = result
+        for each in characteristics:
+            cost = characteristics[each]
+            result = self.chartables[each][cost]
+            characteristics[each] = result
 
-    def getWorld(self):
-        """ Print all the details about this world. """
-        output = "%s\n" % (self.name)
-        output += "%s" % self.getCharacteristics()
-        return output
+        radius = random.randint(planet_min, planet_max)
 
-    def getCharacteristics(self):
-        """ Print the characteristics of this world. """
-        output = ""
-        for key in sorted(self.characteristics):
-            if "proximity" not in key:
-                output += "%s - %s\n" % (key.title(), self.characteristics[key])
-        return output
-
-class Zone(object):
-    """ Represents a zone generated for Elysium Flare. """
-
-    def __init__(self,
-                 namer,
-                 region=None,
-                 name=None,
-                 rand_color=None):
-
-        # pick a zonetype randomly if we weren't given one
-        if region is None:
-            z = (random.randint(0, len(zones)) - 1)
-            self.region = zones.keys()[z]
+        if "veryclose" in distance:
+            weight = 10
+            color = "red"
+        elif "close" in distance:
+            weight = 3
+            color = "blue"
+        elif "far" in distance:
+            weight = 1
+            color = "green"
+        elif "distant" in distance:
+            weight = 1
+            color = "orange"
         else:
-            self.region = zones[region].name
+            weight = 1
+            color = "black"
 
-        if name is not None:
-            self.zonename = name
-        else:
-            self.zonename = namer.genName(suffix=False, zone=self.zonename)
+        color = getcolor(region, self.colorist)
+        # print(anchor, name, region, distance, color)
 
-        # note the other zones we border
-        self.borders = zones[self.region].borders
-
-        # generate our zone capital - this world is at
-        # the center of the map
-        self.capital = World(namer, worldtype=self.region)
-        capx, capy = self.capital.coordinates
-        caprad = self.capital.radius
-        self.capital.color = getcolor(zones[self.region].color, rand_color)
-
-        # generate the other worlds in the zone
-        p = self.capital.characteristics['proximity']
-
-        self.veryclose = []
-        # very close worlds are tangential to the capital world
-        # used to ensure our routes don't overlap worlds
-        heading = 0
-        # used to ensure our close worlds don't overlap the inner sphere worlds,
-        # aka the very close worlds and the capital world
-        inner_sphere = 0
-        for _ in xrange(p[0]):
-            w = World(namer, worldtype=self.region)
-            wrad = w.radius
-
-            # the inner sphere is the outer edge of the largest very close world
-            if wrad*2 > inner_sphere:
-                inner_sphere = wrad*2
-
-            dist = caprad + wrad
-            # Rather than doing proper math to ensure worlds don't overlap, I
-            # just picked a magic number through trial and error.  Fifty looks
-            # about right.
-            magic = 50
-            heading = random.randint(heading + magic * .8,
-                                     heading + magic * 1.2)
-            w.coordinates = theta_point((capx, capy), dist, heading)
-            wx, wy = w.coordinates
-            tangent = findtan((capx, capy), (wx, wy, wrad))
-            heading = heading + tangent
-            w.color = getcolor("green", rand_color)
-            self.veryclose.append(w)
-
-        self.close = []
-        for _ in xrange(p[1]):
-            w = World(namer,
-                      worldtype=self.region)
-            wrad = w.radius
-            # ensure these worlds are outside the inner sphere
-            dist = random.randint(inner_sphere * 1.5, canvas[1] * .4)
-            magic = 50
-            heading = random.randint(heading + magic * .8,
-                                     heading + magic * 1.2)
-            w.coordinates = theta_point((capx, capy), dist+wrad, heading)
-            wx, wy = w.coordinates
-            tangent = findtan((capx, capy), (wx, wy, wrad))
-            heading = heading + tangent
-            w.color = getcolor("red", rand_color)
-            self.close.append(w)
-
-        self.distant = []
-        for _ in xrange(p[2]):
-            heading = random.randint(heading + 5, heading + 20)
-            self.distant.append((self.region,
-                                 namer.genName(suffix=False),
-                                 heading))
-
-        self.far = []
-        for _ in xrange(p[3]):
-            heading = random.randint(heading + 5, heading + 20)
-            self.far.append((random.choice(self.borders),
-                             namer.genName(suffix=False),
-                             heading))
-
-    def getNeighbors(self):
-        """ Return text describing the neighboring worlds and zones. """
-        output = ""
-
-        for z in self.veryclose:
-            output += z.getWorld()
-            output += "\n"
-
-        for z in self.close:
-            output += z.getWorld()
-            output += "\n"
-
-        # for z in self.distant:
-        #     output += "Distant %s Sector -%s\n\n" \
-        #     % (z[0].title(), z[1])
-
-        # for z in self.far:
-        #     output += "Far - %s:%s\n\n" % (z[0].title(), z[1])
-
-        return output
+        self.add_node(name,
+                      region=region,
+                      characteristics=characteristics,
+                      linked=linked,
+                      label=label,
+                      distance=distance,
+                      radius=radius,
+                      color=color)
+        if anchor is not None:
+            self.add_edge(anchor,
+                            name,
+                            distance=distance,
+                            weight=weight)
+        return name
 
 def theta_point(coordinates, distance, theta):
     """ generate a new point at a given distance and angle
@@ -382,6 +372,98 @@ def drawWorld(world, image):
     color = world.color
     d.ellipse(box, fill=color, outline=color)
 
+def drawSector(s):
+    """ Render an image with all the worlds in the sector. """
+    background = (240, 240, 240)
+    image = Image.new('RGB', canvas, background)
+    d = ImageDraw.Draw(image)
+    fnt = ImageFont.truetype(fontfile, planet_label_size)
+    
+    jumps = {}
+    for edge in s.edges():
+        a, b = edge
+        # draw the out-sector jumps
+        
+        if "close" not in s[a][b]['distance']:
+            if ":" not in s.node[a]['label']:
+                anchor = a
+                link = b
+            else:
+                anchor = b
+                link = a
+            label = s.node[link]['label']
+            
+            x1 = s.node[link]['x']
+            x2 = s.node[anchor]['x']
+            y1 = s.node[link]['y']
+            y2 = s.node[anchor]['y']
+            angle = degrees(atan2(y1 - y2, x1 - x2))
+            s[a][b]['angle'] = angle
+            pos = theta_point((x2, y2), canvas[0], angle)
+            labpos = theta_point((x2, y2), canvas[0]/4, angle)
+            s.node[link]['x'] = pos[0]
+            s.node[link]['y'] = pos[1]
+            print(label, labpos)
+            jumps[label] = labpos
+
+    # draw the edges
+    for edge in s.edges():
+        a, b = edge
+        distance =  s[a][b]['distance']
+        if "veryclose" in distance:
+            color = "red"
+        elif "close" in distance:
+            color = "blue"
+        elif "far" in distance:
+            color = "black"
+        elif "distant" in distance:
+            color = "black"
+        else:
+            color = "black"
+        
+        x1 = s.node[a]['x']
+        y1 = s.node[a]['y']
+        x2 = s.node[b]['x']
+        y2 = s.node[b]['y']
+        d.line((x1, y1, x2, y2),
+                fill=color,
+                width=2)
+    
+    # draw the worlds
+    for node, data in s.nodes(data=True):
+        if "far" not in data['distance'] and \
+            "distant" not in data['distance']:
+            x = data['x']
+            y = data['y']
+            r = data['radius']
+            c = data['color']
+            ul = (x-r, y-r)
+            lr = (x+r, y+r)
+            box = (ul, lr)
+            d.ellipse(box, fill=c, outline=c)
+
+    # draw the labels for the worlds
+    for node, data in s.nodes(data=True):
+        if "far" not in data['distance'] and \
+            "distant" not in data['distance']:
+            r = data['radius']
+            if data['x'] < canvas[0] / 2:
+                x = data['x'] - fnt.getsize(node)[0]
+            else:
+                x = data['x']
+            y = data['y'] + r
+            d.text((x, y),
+                node,
+                font=fnt,
+                fill="black")
+
+    for j in jumps:
+        d.text(jumps[j], j, font=fnt, fill="black")
+
+    out = image.resize((canvas[0]/shrink, canvas[1]/shrink), resample=1)
+    out.save("static/%s.jpg" % s.name)
+    return
+
 def drawZone(thiszone):
     """ Render an image with all the worlds in the thiszone. """
     background = (240, 240, 240)
@@ -429,14 +511,14 @@ def drawZone(thiszone):
 
 def wordstoseed(words):
     """ convert a list of words into an integer """
-    print(words)
     # concatenate the letters, convert them to numbers
     s = int(''.join([str(ord(char) - 96) for char in ''.join(words).lower()]))
     # Random seeds have to be less than 2^32-1
     # so we cut it down until it fits. Dividing by seven seems to give good
     # "randomness".
     while s > (2**32 - 1):
-        s = int(s / 7)
+        s = str(s)[1:]
+        s = int(s)/7
     return s
 
 def cleanup():
@@ -466,31 +548,22 @@ def zonemaker(region, zonename):
         zonename = zonename.title()
 
     seed = wordstoseed([region, zonename])
-    rand_color = randomcolor.RandomColor(seed=seed)
     random.seed(seed)
-    print(region, zonename)
-    print(seed)
 
-    mynamer = NameGenerator(planets, suffixes, zonename=zonename)
-    myzone = Zone(mynamer, region=region, name=zonename, rand_color=rand_color)
-    name = myzone.zonename
-    region = myzone.region.title()
-    capital = myzone.capital
+    sector = Sector(region=region, name=zonename, seed=seed)
+    drawSector(sector)
+    # text = "%s\n" % capital.getWorld()
+    # text += myzone.getNeighbors()
 
-    text = "%s\n" % capital.getWorld()
-    text += myzone.getNeighbors()
+    # drawZone(myzone)
+    # image = myzone.zonename + ".jpg"
 
-    drawZone(myzone)
-    image = myzone.zonename + ".jpg"
-    return render_template('index.html',
+    image = sector.name + ".jpg"
+    return render_template('sector.html',
                            image=image,
-                           text=text,
-                           region=region,
-                           name=name,
                            font="Crushed",
-                           zone=myzone
+                           sector=sector
                           )
-
 
 @app.route('/region/<region>/')
 @app.route('/')
@@ -503,11 +576,8 @@ def zonefinder(region=None):
 
     zonenamer = NameGenerator(planets, suffixes)
     zonename = zonenamer.genName(suffix=False).title()
-    print(region)
-    print(zonename)
 
     return redirect(url_for('zonemaker', region=region.title(), zonename=zonename.title()))
-
 
 if __name__ == '__main__':
     cleanup()

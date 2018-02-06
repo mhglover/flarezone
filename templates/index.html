@@ -21,17 +21,8 @@
   <div class="panel">
   <h2>{{zone.region.title()}}:{{zone.zonename}}</h2>
 
-    <strong>{{zone.capital.name}}</strong>
-    <ul>
-      {% for char in zone.capital.characteristics %}
-        {% if "proximity" not in char %}
-          <li><em>{{char}}</em> - {{zone.capital.characteristics[char]}}</li>
-        {%endif%}
-      {%endfor%}
-    </ul>
-
-  {% for world in zone.veryclose %}
-    <strong>{{world.name}}</strong>
+  {% for world, data in sector.nodes(data=True) %}
+    <strong>{{world}}</strong>
     <ul>
       {% for char in world.characteristics %}
         {% if "proximity" not in char %}

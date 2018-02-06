@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css?family=Crushed" rel="stylesheet"> 
+    <title>{{sector.region.title()}}:{{sector.name.title()}}</title>
+    {% endblock %}
+  </head>
+
+
+<div class="astrogator">
+    <div class="chart-display">
+        <h2><a href="{{url_for('zonefinder')}}">Astrogation Core Mk I</a> - <a href="{{url_for('zonefinder', region=sector.region.title())}}">{{sector.region.title()}}</a>:<a href="{{url_for('zonemaker', region=sector.region.title(), zonename=sector.name.title())}}">{{sector.name.title()}}</a></h2>
+        <img class="chart" src="/static/{{image}}" alt="{{text}}" width=700px>
+        <h3 class="patreon"><a href="https://www.patreon.com/halfjack">Support VSCA</a> on Patreon and play <a href="https://www.patreon.com/halfjack/posts?tag=elysium%20flare">Elysium Flare</a></h3>
+        <h3 class="corp">Binary Systems Corporation</h3>
+        
+            {% if sector.distant == True %}
+            <div class="world">
+            <strong>Jump Routes To Other {{ sector.region }} Sectors</strong>
+            <ul>
+            {% for world, data in sector.nodes(data=True) %}
+                {% if "distant" in data['distance'] %}
+                <li><a href="{{url_for('zonemaker', region=data['region'].title(), zonename=world)}}">{{world}}</a></li>
+                {% endif %}
+            {% endfor %}
+            </ul>
+            </div>
+        {% endif %}
+
+        {% if sector.far == True %}
+        <div class="patreon">
+            <strong>Jump Routes Outside The Region</strong>
+            <ul>
+            {% for world, data in sector.nodes(data=True) %}
+                {% if "far" in data['distance'] %}
+                <li><a href="{{url_for('zonemaker', region=data['region'].title(), zonename=world)}}">{{data['label']}}</a></li>
+                {% endif %}
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    
+    </div>
+
+    <div class="panel">
+        {% for world, data in sector.nodes(data=True) %}
+            {% if "close" in data['distance'] %}
+                <div class="world">
+                <strong>{{data['label']}}</strong>
+                <ul>
+                {% for char in data['characteristics'].keys() %}
+                    {% if "proximity" not in char %}
+                    <li><em>{{char}}</em> - {{data['characteristics'][char]}}</li>
+                    {%endif%}
+                {%endfor%}
+                </ul>
+            </div>
+            {%endif%}
+        {%endfor %}
+    </div>
+</div>

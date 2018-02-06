@@ -22,6 +22,8 @@ ul              { list-style: none;}
                   border: 1px solid #aacbe2; }
 .error          { background: #f0d6d6; padding: 0.5em; }
 .panel          { float: left; padding: 0px 40px 0px 20px; width: 600px;}
-.chart-display  { float: left; }
+.chart-display  { float: left; width: 700px; }
 .chart          { border: 1px solid black;}
-.footer         { clear: both;}
+.footer         { clear: both; }
+.world          { float: left; }
+.patreon        { float: right;}
