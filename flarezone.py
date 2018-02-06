@@ -114,10 +114,8 @@ class NameGenerator(object):
             planet_name = self.genName(suffix=suffix)
         if self.zonename:
             while planet_name in self.zonename:
-                print(self.zonename)
                 planet_name = self.genName(suffix=suffix)
         self.generatednames.append(planet_name)
-        print(planet_name)
         return planet_name
 
 class World(object):
@@ -429,7 +427,6 @@ def drawZone(thiszone):
 
 def wordstoseed(words):
     """ convert a list of words into an integer """
-    print(words)
     # concatenate the letters, convert them to numbers
     s = int(''.join([str(ord(char) - 96) for char in ''.join(words).lower()]))
     # Random seeds have to be less than 2^32-1
@@ -468,8 +465,6 @@ def zonemaker(region, zonename):
     seed = wordstoseed([region, zonename])
     rand_color = randomcolor.RandomColor(seed=seed)
     random.seed(seed)
-    print(region, zonename)
-    print(seed)
 
     mynamer = NameGenerator(planets, suffixes, zonename=zonename)
     myzone = Zone(mynamer, region=region, name=zonename, rand_color=rand_color)
@@ -503,13 +498,11 @@ def zonefinder(region=None):
 
     zonenamer = NameGenerator(planets, suffixes)
     zonename = zonenamer.genName(suffix=False).title()
-    print(region)
-    print(zonename)
 
     return redirect(url_for('zonemaker', region=region.title(), zonename=zonename.title()))
 
 
 if __name__ == '__main__':
     cleanup()
-    app.run(debug=True, host='::')
-    # app.run(host='::')
+    # app.run(debug=True, host='::')
+    app.run(host='::')
