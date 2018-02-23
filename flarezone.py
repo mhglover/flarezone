@@ -446,6 +446,7 @@ def cleanup():
             if os.path.isfile(ff) and "jpg" in f:
                 os.remove(ff)
 
+
 @app.route('/region/<region>/<zonename>/')
 def zonemaker(region, zonename):
     """ Default endpoint - generate text defining a zone and the worlds in it."""
@@ -484,12 +485,14 @@ def zonemaker(region, zonename):
                            name=name,
                            font="Crushed",
                            zone=myzone
-                          )
+                           )
 
 
 @app.route('/region/<region>/')
 @app.route('/')
 def zonefinder(region=None):
+    """Build a sector."""
+    cleanup()
     random.seed()
     if region is None:
         region = random.choice(zones.keys()).lower()
