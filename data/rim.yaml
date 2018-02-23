@@ -2,7 +2,6 @@ name: rim
 links: 4
 color: "red"
 borders:
-  - Hub
   - Shamayan
   - Aukumean
   - Manichean
